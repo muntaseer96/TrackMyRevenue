@@ -68,7 +68,7 @@ export function useAIInsights() {
 
     const cached = getCachedInsights()
 
-    // If we have valid cache, don't fetch
+    // If we have valid cache, use it
     if (isCacheValid(cached, dataHash)) {
       if (cached) {
         setInsights(cached.insights)
@@ -77,10 +77,8 @@ export function useAIInsights() {
       return
     }
 
-    // If we have no insights at all, auto-fetch
-    if (!insights) {
-      fetchInsights()
-    }
+    // Cache is invalid (data changed or expired) - fetch new insights
+    fetchInsights()
   }, [hasApiKey, summaryLoading, summary, dataHash])
 
   const fetchInsights = useCallback(async () => {
