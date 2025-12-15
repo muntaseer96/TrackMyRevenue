@@ -17,10 +17,10 @@ const confidenceVariants: Record<string, 'success' | 'warning' | 'info'> = {
 }
 
 function formatCurrency(amount: number): string {
-  if (amount >= 100000) {
-    return `৳${(amount / 100000).toFixed(2)}L`
+  if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(1)}K`
   }
-  return `৳${amount.toLocaleString()}`
+  return `$${amount.toLocaleString()}`
 }
 
 export function ForecastCard({ forecast }: ForecastCardProps) {

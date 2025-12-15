@@ -6,20 +6,21 @@ interface PerformerCardProps {
 }
 
 function formatValue(value: number, metric: string): string {
-  // If it looks like currency, format accordingly
+  // If it looks like a percentage/margin
+  if (metric.toLowerCase().includes('margin') ||
+      metric.toLowerCase().includes('rate') ||
+      metric.toLowerCase().includes('yield') ||
+      metric.toLowerCase().includes('%')) {
+    return `${value.toFixed(1)}%`
+  }
+  // If it looks like currency
   if (metric.toLowerCase().includes('revenue') ||
       metric.toLowerCase().includes('profit') ||
       metric.toLowerCase().includes('amount')) {
-    if (value >= 100000) {
-      return `৳${(value / 100000).toFixed(2)}L`
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}K`
     }
-    return `৳${value.toLocaleString()}`
-  }
-  // If it looks like a percentage
-  if (metric.toLowerCase().includes('margin') ||
-      metric.toLowerCase().includes('rate') ||
-      metric.toLowerCase().includes('%')) {
-    return `${value.toFixed(1)}%`
+    return `$${value.toLocaleString()}`
   }
   // Default formatting
   return value.toLocaleString()

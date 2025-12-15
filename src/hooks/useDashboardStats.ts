@@ -248,6 +248,22 @@ export function useDashboardStats() {
       }
     })
 
+  // Calculate total global expenses for allocation to websites
+  const totalGlobalExpenseForAllocation = totalGlobalMonthlyExpense + totalGlobalYearlyAmortized
+
+  // Count websites with revenue > 0 for fair allocation
+  const websitesWithRevenue = websites.filter(website => {
+    return entries.some(entry => {
+      if (entry.website_id !== website.id) return false
+      const category = categoryMap.get(entry.category_id)
+      return category?.type === 'revenue' && entry.amount > 0
+    })
+  })
+  const websiteCountForAllocation = Math.max(websitesWithRevenue.length, 1) // Avoid division by 0
+
+  // Global expense per website (equal split among revenue-generating sites)
+  const globalExpensePerWebsite = totalGlobalExpenseForAllocation / websiteCountForAllocation
+
   // Revenue by website (filtered by month range)
   const websiteRevenue: WebsiteRevenueData[] = websites.map(website => {
     let revenue = 0
@@ -270,6 +286,11 @@ export function useDashboardStats() {
         expense += (exp.cost_usd / 12) * monthsInRange
       }
     })
+
+    // Add allocated global expenses (only for websites with revenue)
+    if (revenue > 0) {
+      expense += globalExpensePerWebsite
+    }
 
     return {
       websiteId: website.id,

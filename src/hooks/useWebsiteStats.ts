@@ -14,6 +14,8 @@ export interface WebsiteStatsData {
   entries: MonthlyEntry[]
   exchangeRates: MonthlyExchangeRate[]
   expenses: Tool[]
+  globalExpenses: Tool[]
+  allEntries: MonthlyEntry[]
 }
 
 export interface WebsiteMonthlyTrendData {
@@ -40,8 +42,18 @@ export function useWebsiteStatsData(websiteId: string | undefined) {
     queryFn: async (): Promise<WebsiteStatsData> => {
       if (!websiteId) throw new Error('Website ID required')
 
+      // Get user_id from any category for this website
+      const { data: categoryCheck } = await supabase
+        .from('categories')
+        .select('user_id')
+        .eq('website_id', websiteId)
+        .limit(1)
+        .single()
+
+      const userId = categoryCheck?.user_id
+
       // Fetch all data in parallel
-      const [categoriesResult, entriesResult, ratesResult, expensesResult] = await Promise.all([
+      const [categoriesResult, entriesResult, ratesResult, expensesResult, globalExpensesResult, allEntriesResult] = await Promise.all([
         supabase
           .from('categories')
           .select('*')
@@ -60,18 +72,35 @@ export function useWebsiteStatsData(websiteId: string | undefined) {
           .select('*')
           .eq('website_id', websiteId)
           .eq('year', selectedYear),
+        // Fetch global expenses (no website_id)
+        userId ? supabase
+          .from('tools')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('year', selectedYear)
+          .is('website_id', null) : Promise.resolve({ data: [], error: null }),
+        // Fetch all entries to determine which websites have revenue (for expense allocation)
+        userId ? supabase
+          .from('monthly_entries')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('year', selectedYear) : Promise.resolve({ data: [], error: null }),
       ])
 
       if (categoriesResult.error) throw categoriesResult.error
       if (entriesResult.error) throw entriesResult.error
       if (ratesResult.error) throw ratesResult.error
       if (expensesResult.error) throw expensesResult.error
+      if (globalExpensesResult.error) throw globalExpensesResult.error
+      if (allEntriesResult.error) throw allEntriesResult.error
 
       return {
         categories: categoriesResult.data as Category[],
         entries: entriesResult.data as MonthlyEntry[],
         exchangeRates: ratesResult.data as MonthlyExchangeRate[],
         expenses: expensesResult.data as Tool[],
+        globalExpenses: (globalExpensesResult.data || []) as Tool[],
+        allEntries: (allEntriesResult.data || []) as MonthlyEntry[],
       }
     },
     enabled: !!websiteId,
@@ -99,10 +128,33 @@ export function useWebsiteStats(websiteId: string | undefined) {
     }
   }
 
-  const { categories, entries, exchangeRates, expenses } = data
+  const { categories, entries, exchangeRates, expenses, globalExpenses, allEntries } = data
 
   // Create category lookup
   const categoryMap = new Map(categories.map(c => [c.id, c]))
+
+  // Count websites with revenue entries (for fair expense allocation)
+  const websitesWithRevenue = new Set<string>()
+  allEntries.forEach(entry => {
+    // Check if this entry is revenue by checking if this website has revenue
+    // We'll count any website with positive entry amounts
+    if (entry.amount > 0 && entry.website_id) {
+      websitesWithRevenue.add(entry.website_id)
+    }
+  })
+  const websiteCountForAllocation = Math.max(websitesWithRevenue.size, 1)
+
+  // Calculate global expense allocation per website
+  const globalMonthlyExpenses = globalExpenses.filter(exp => exp.recurrence === 'monthly' || !exp.recurrence)
+  const globalYearlyExpenses = globalExpenses.filter(exp => exp.recurrence === 'yearly')
+
+  const totalGlobalMonthlyExpense = globalMonthlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
+  const totalGlobalYearlyExpense = globalYearlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
+  const totalGlobalExpense = totalGlobalMonthlyExpense + totalGlobalYearlyExpense
+
+  // This website's share of global expenses (equal split)
+  const allocatedGlobalExpense = totalGlobalExpense / websiteCountForAllocation
+  const allocatedGlobalExpensePerMonth = allocatedGlobalExpense / 12
 
   // Calculate amortized annual expenses (website-specific yearly expenses spread across 12 months)
   const annualExpenseAmortized = expenses.reduce((sum, exp) => sum + exp.cost_usd / 12, 0)
@@ -128,6 +180,9 @@ export function useWebsiteStats(websiteId: string | undefined) {
   // Add amortized annual expenses to total (spread across 12 months)
   totalExpense += annualExpenseAmortized * 12 // Full year total for yearly summary
 
+  // Add allocated global expenses
+  totalExpense += allocatedGlobalExpense
+
   const totalProfit = totalRevenue - totalExpense
   const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
 
@@ -150,6 +205,9 @@ export function useWebsiteStats(websiteId: string | undefined) {
 
     // Add amortized annual expenses to each month
     expense += annualExpenseAmortized
+
+    // Add allocated global expenses per month
+    expense += allocatedGlobalExpensePerMonth
 
     return {
       month,
@@ -205,6 +263,16 @@ export function useWebsiteStats(websiteId: string | undefined) {
       type: 'expense' as const,
     })
   })
+
+  // Add allocated global expenses to expense breakdown
+  if (allocatedGlobalExpense > 0) {
+    expenseByCategory.push({
+      categoryId: 'allocated-global',
+      categoryName: 'Shared Expenses (Allocated)',
+      amount: allocatedGlobalExpense,
+      type: 'expense' as const,
+    })
+  }
 
   // Sort by amount descending
   expenseByCategory.sort((a, b) => b.amount - a.amount)

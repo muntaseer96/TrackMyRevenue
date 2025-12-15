@@ -74,17 +74,17 @@ export function Dashboard() {
         {/* Monthly Trend Chart */}
         <MonthlyTrendChart data={monthlyTrend} exchangeRate={avgExchangeRate} />
 
-        {/* Two column layout for website revenue and category breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue by Website */}
-          <RevenueByWebsiteChart data={websiteRevenue} exchangeRate={avgExchangeRate} />
+        {/* Revenue by Website */}
+        <RevenueByWebsiteChart data={websiteRevenue} exchangeRate={avgExchangeRate} />
 
-          {/* Revenue by Category */}
-          <CategoryPieChart
-            revenueData={revenueByCategory}
-            exchangeRate={avgExchangeRate}
-          />
-        </div>
+        {/* Revenue by Category - Full width with website filter */}
+        <CategoryPieChart
+          revenueData={revenueByCategory}
+          exchangeRate={avgExchangeRate}
+          websites={dashboardData?.websites || []}
+          entries={dashboardData?.entries || []}
+          categories={dashboardData?.categories || []}
+        />
       </div>
     </div>
   )

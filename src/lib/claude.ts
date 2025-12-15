@@ -11,7 +11,7 @@ IMPORTANT: Respond ONLY with valid JSON matching this exact structure:
   "summary": {
     "health": "excellent" | "good" | "fair" | "poor",
     "description": "1-2 sentence assessment",
-    "keyMetric": "Key highlight like '৳21L+ profit YTD'"
+    "keyMetric": "Key highlight like '$18K+ profit YTD'"
   },
   "trends": [
     {
@@ -35,7 +35,7 @@ IMPORTANT: Respond ONLY with valid JSON matching this exact structure:
     {
       "type": "website" | "category",
       "name": "Name",
-      "metric": "What metric they excel in",
+      "metric": "What metric they excel in (e.g., Profit Margin, Revenue)",
       "value": number,
       "reason": "Why they're top"
     }
@@ -67,11 +67,20 @@ IMPORTANT: Respond ONLY with valid JSON matching this exact structure:
 }
 
 CRITICAL JSON RULES:
-- All numeric fields (value, projectedRevenue, projectedExpense, projectedProfit, percentChange, month) MUST be plain numbers WITHOUT currency symbols or commas. Example: 9790.63 NOT ৳9,790.63
-- Currency symbols (৳) are ONLY allowed in string fields like description, keyMetric, reason
+- All numeric fields (value, projectedRevenue, projectedExpense, projectedProfit, percentChange, month) MUST be plain numbers WITHOUT currency symbols, percentage signs, or commas
+- Example: 9790.63 NOT $9,790.63, and 99.8 NOT 99.8%
+- Currency/percentage symbols are ONLY allowed in string fields like description, keyMetric, reason
+
+ANALYSIS RULES:
+- Currency is USD - use $ symbol in text descriptions (e.g., "$2.1K profit", "$18K revenue")
+- IGNORE months with zero or near-zero revenue - they have not been entered yet, do NOT flag them as anomalies
+- Do NOT make year-over-year comparisons - only analyze month-over-month trends within the provided data
+- Forecast should be based on the AVERAGE of months that have actual data (non-zero revenue)
+- Percentages use % symbol in text (e.g., "99.8% margin"), NOT currency symbols
+- For topPerformers: if metric is a margin/percentage, value is the number (99.8), if metric is revenue/profit, value is the dollar amount (2500)
 
 Guidelines:
-- In text/string fields, format currency as ৳21L for lakhs
+- Format large USD amounts as $2.1K, $18K, etc. in text fields
 - Be specific with numbers and percentages
 - Focus on actionable insights, not just observations
 - If no anomalies or alerts exist, return empty arrays
@@ -83,11 +92,12 @@ const CHAT_SYSTEM_PROMPT = `You are a CFO and financial analyst assistant for a 
 You have access to their financial data which will be provided with each question. Answer questions helpfully and concisely.
 
 Guidelines:
-- Use BDT (৳) for currency, format large numbers with L for lakhs (e.g., ৳21L)
+- Currency is USD - use $ symbol (e.g., $2.1K, $500)
 - Be specific with numbers when answering
 - Keep responses brief and actionable (2-4 sentences unless more detail is needed)
 - If you don't have enough data to answer, say so
-- Focus on practical advice, not generic financial platitudes`
+- Focus on practical advice, not generic financial platitudes
+- Do NOT make year-over-year comparisons unless previous year data is explicitly provided`
 
 export async function analyzeFinancials(data: FinancialSummary): Promise<AIInsights> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY
@@ -96,36 +106,41 @@ export async function analyzeFinancials(data: FinancialSummary): Promise<AIInsig
     throw new Error('Claude API key not configured')
   }
 
-  const userMessage = `Analyze this financial data for the period ${data.period.year}, months ${data.period.startMonth} to ${data.period.endMonth}:
+  // Filter out months with zero revenue (not yet entered)
+  const monthsWithData = data.monthlyTrends.filter(m => m.revenue > 0)
+  const monthsWithDataCount = monthsWithData.length
 
-TOTALS:
-- Revenue: ৳${data.totals.revenue.toLocaleString()}
-- Expenses: ৳${data.totals.expense.toLocaleString()}
-- Profit: ৳${data.totals.profit.toLocaleString()}
+  const userMessage = `Analyze this financial data for ${data.period.year}:
+
+IMPORTANT CONTEXT:
+- This is ${data.period.year} data only. No previous year data exists - do NOT make year-over-year comparisons.
+- Only ${monthsWithDataCount} months have actual data entered. Months with $0 revenue have NOT been entered yet - ignore them completely.
+- Base your forecast on the average of months that have data.
+
+TOTALS (for months with data):
+- Revenue: $${data.totals.revenue.toLocaleString()}
+- Expenses: $${data.totals.expense.toLocaleString()}
+- Profit: $${data.totals.profit.toLocaleString()}
 - Profit Margin: ${data.totals.margin.toFixed(1)}%
 
-MONTHLY TRENDS:
-${data.monthlyTrends.map(m => `Month ${m.month}: Revenue ৳${m.revenue.toLocaleString()}, Expense ৳${m.expense.toLocaleString()}, Profit ৳${m.profit.toLocaleString()}`).join('\n')}
+MONTHLY DATA (only showing months with data):
+${monthsWithData.map(m => `Month ${m.month}: Revenue $${m.revenue.toLocaleString()}, Expense $${m.expense.toLocaleString()}, Profit $${m.profit.toLocaleString()}`).join('\n')}
 
 WEBSITE PERFORMANCE:
-${data.websitePerformance.map(w => `${w.name}: Revenue ৳${w.revenue.toLocaleString()}, Expense ৳${w.expense.toLocaleString()}, Profit ৳${w.profit.toLocaleString()} (${w.margin.toFixed(1)}% margin)`).join('\n')}
+${data.websitePerformance.filter(w => w.revenue > 0).map(w => `${w.name}: Revenue $${w.revenue.toLocaleString()}, Expense $${w.expense.toLocaleString()}, Profit $${w.profit.toLocaleString()} (${w.margin.toFixed(1)}% margin)`).join('\n')}
 
 REVENUE CATEGORIES:
-${data.categoryBreakdown.revenue.map(c => `${c.name}: ৳${c.amount.toLocaleString()}`).join('\n')}
+${data.categoryBreakdown.revenue.filter(c => c.amount > 0).map(c => `${c.name}: $${c.amount.toLocaleString()}`).join('\n')}
 
 EXPENSE CATEGORIES:
-${data.categoryBreakdown.expense.map(c => `${c.name}: ৳${c.amount.toLocaleString()}`).join('\n')}
+${data.categoryBreakdown.expense.filter(c => c.amount > 0).map(c => `${c.name}: $${c.amount.toLocaleString()}`).join('\n')}
 
 INVESTMENTS:
-- Principal: ৳${data.investments.principal.toLocaleString()}
-- Dividends Received: ৳${data.investments.dividends.toLocaleString()}
+- Principal: $${data.investments.principal.toLocaleString()}
+- Dividends Received: $${data.investments.dividends.toLocaleString()}
 - Dividend Yield: ${data.investments.yield.toFixed(2)}%
 
-RECURRING EXPENSES:
-- Monthly Tools: ৳${data.recurringExpenses.monthlyTotal.toLocaleString()}
-- Yearly (amortized): ৳${data.recurringExpenses.yearlyAmortized.toLocaleString()}
-
-Provide your CFO analysis as JSON.`
+Provide your CFO analysis as JSON. Remember: forecast based on average monthly revenue of ~$${(data.totals.revenue / monthsWithDataCount).toFixed(0)}.`
 
   const response = await fetch(CLAUDE_API_URL, {
     method: 'POST',
@@ -183,19 +198,21 @@ Provide your CFO analysis as JSON.`
 }
 
 function formatFinancialContext(data: FinancialSummary): string {
-  return `FINANCIAL DATA (${data.period.year}, months ${data.period.startMonth}-${data.period.endMonth}):
+  const monthsWithData = data.monthlyTrends.filter(m => m.revenue > 0)
 
-TOTALS: Revenue ৳${data.totals.revenue.toLocaleString()}, Expenses ৳${data.totals.expense.toLocaleString()}, Profit ৳${data.totals.profit.toLocaleString()} (${data.totals.margin.toFixed(1)}% margin)
+  return `FINANCIAL DATA (${data.period.year}, ${monthsWithData.length} months with data):
+
+TOTALS: Revenue $${data.totals.revenue.toLocaleString()}, Expenses $${data.totals.expense.toLocaleString()}, Profit $${data.totals.profit.toLocaleString()} (${data.totals.margin.toFixed(1)}% margin)
 
 MONTHLY:
-${data.monthlyTrends.map(m => `M${m.month}: R৳${m.revenue.toLocaleString()} E৳${m.expense.toLocaleString()} P৳${m.profit.toLocaleString()}`).join(' | ')}
+${monthsWithData.map(m => `M${m.month}: R$${m.revenue.toLocaleString()} E$${m.expense.toLocaleString()} P$${m.profit.toLocaleString()}`).join(' | ')}
 
 WEBSITES:
-${data.websitePerformance.map(w => `${w.name}: R৳${w.revenue.toLocaleString()} P৳${w.profit.toLocaleString()} (${w.margin.toFixed(0)}%)`).join(' | ')}
+${data.websitePerformance.filter(w => w.revenue > 0).map(w => `${w.name}: R$${w.revenue.toLocaleString()} P$${w.profit.toLocaleString()} (${w.margin.toFixed(0)}%)`).join(' | ')}
 
-REVENUE BY CATEGORY: ${data.categoryBreakdown.revenue.map(c => `${c.name} ৳${c.amount.toLocaleString()}`).join(', ')}
+REVENUE BY CATEGORY: ${data.categoryBreakdown.revenue.filter(c => c.amount > 0).map(c => `${c.name} $${c.amount.toLocaleString()}`).join(', ')}
 
-INVESTMENTS: Principal ৳${data.investments.principal.toLocaleString()}, Dividends ৳${data.investments.dividends.toLocaleString()} (${data.investments.yield.toFixed(1)}% yield)`
+INVESTMENTS: Principal $${data.investments.principal.toLocaleString()}, Dividends $${data.investments.dividends.toLocaleString()} (${data.investments.yield.toFixed(1)}% yield)`
 }
 
 export async function askFinancialQuestion(
