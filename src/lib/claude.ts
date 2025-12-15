@@ -66,8 +66,12 @@ IMPORTANT: Respond ONLY with valid JSON matching this exact structure:
   ]
 }
 
+CRITICAL JSON RULES:
+- All numeric fields (value, projectedRevenue, projectedExpense, projectedProfit, percentChange, month) MUST be plain numbers WITHOUT currency symbols or commas. Example: 9790.63 NOT ৳9,790.63
+- Currency symbols (৳) are ONLY allowed in string fields like description, keyMetric, reason
+
 Guidelines:
-- Use BDT (৳) for currency, format large numbers with L for lakhs (e.g., ৳21L)
+- In text/string fields, format currency as ৳21L for lakhs
 - Be specific with numbers and percentages
 - Focus on actionable insights, not just observations
 - If no anomalies or alerts exist, return empty arrays
