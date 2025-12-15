@@ -1,6 +1,7 @@
 import { Header } from '../components/layout/Header'
 import { DateRangeFilter } from '../components/layout/DateRangeFilter'
 import { KPICards, MonthlyTrendChart, RevenueByWebsiteChart, CategoryPieChart } from '../components/dashboard'
+import { AIInsightsSection } from '../components/ai'
 import { useDashboardStats, useDashboardData } from '../hooks/useDashboardStats'
 import { useFilterStore, formatDateRange } from '../stores/filterStore'
 import { DEFAULT_EXCHANGE_RATE } from '../hooks/useExchangeRates'
@@ -66,6 +67,9 @@ export function Dashboard() {
           margin={totals.margin}
           exchangeRate={avgExchangeRate}
         />
+
+        {/* AI Financial Insights */}
+        <AIInsightsSection />
 
         {/* Monthly Trend Chart */}
         <MonthlyTrendChart data={monthlyTrend} exchangeRate={avgExchangeRate} />
