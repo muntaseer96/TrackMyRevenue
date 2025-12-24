@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { Layout } from './components/layout/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -15,7 +15,7 @@ import { Cashflow } from './pages/Cashflow'
 import { useEffect } from 'react'
 import { Toaster } from './components/ui'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute() {
   const { user, loading, initialize } = useAuthStore()
 
   useEffect(() => {
@@ -34,7 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  return <>{children}</>
+  return <Outlet />
 }
 
 function App() {
@@ -42,26 +42,19 @@ function App() {
     <ErrorBoundary>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/websites" element={<Websites />} />
-                  <Route path="/websites/:id" element={<WebsiteDetail />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/investments" element={<Investments />} />
-                  <Route path="/expenses" element={<Expenses />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/import" element={<Import />} />
-                  <Route path="/cashflow" element={<Cashflow />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/websites" element={<Websites />} />
+            <Route path="/websites/:id" element={<WebsiteDetail />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/investments" element={<Investments />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/import" element={<Import />} />
+            <Route path="/cashflow" element={<Cashflow />} />
+          </Route>
+        </Route>
       </Routes>
       <Toaster />
     </ErrorBoundary>

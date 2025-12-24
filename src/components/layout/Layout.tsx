@@ -1,12 +1,9 @@
-import { ReactNode, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { Outlet } from 'react-router-dom'
 import { Menu, TrendingUp } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 
-interface LayoutProps {
-  children: ReactNode
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const openSidebar = () => setSidebarOpen(true)
@@ -36,7 +33,7 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Main Content */}
         <main className="flex-1">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

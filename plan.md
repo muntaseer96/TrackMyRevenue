@@ -987,7 +987,7 @@ export function parseToolsCSV(csv: string): ParsedToolData
 
 ---
 
-## Phase 14: Smart AI Suggestions & Financial Partner
+## Phase 14: Smart AI Suggestions & Financial Partner [DONE]
 
 ## Summary
 
