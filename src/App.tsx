@@ -11,6 +11,7 @@ import { Investments } from './pages/Investments'
 import { Expenses } from './pages/Expenses'
 import { Profile } from './pages/Profile'
 import { Import } from './pages/Import'
+import { Cashflow } from './pages/Cashflow'
 import { useEffect } from 'react'
 import { Toaster } from './components/ui'
 
@@ -55,6 +56,7 @@ function App() {
                   <Route path="/expenses" element={<Expenses />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/import" element={<Import />} />
+                  <Route path="/cashflow" element={<Cashflow />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

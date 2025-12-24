@@ -185,3 +185,83 @@ export interface ApiResponse<T> {
   data: T | null
   error: string | null
 }
+
+// ============================================
+// Personal Cashflow Types (Separate from business)
+// ============================================
+
+export interface PersonalAccount {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PersonalCategory {
+  id: string
+  user_id: string
+  name: string
+  type: 'income' | 'expense'
+  color: string
+  created_at: string
+}
+
+export interface PersonalBalance {
+  id: string
+  user_id: string
+  account_id: string
+  year: number
+  month: number
+  beginning_balance: number
+  created_at: string
+  updated_at: string
+}
+
+export interface PersonalTransaction {
+  id: string
+  user_id: string
+  account_id: string
+  category_id: string | null
+  year: number
+  month: number
+  day: number
+  amount: number
+  note: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Extended types for UI
+export interface PersonalTransactionWithCategory extends PersonalTransaction {
+  category: PersonalCategory | null
+}
+
+export interface AccountSummary extends PersonalAccount {
+  beginning_balance: number
+  ending_balance: number
+  net_change: number
+  total_income: number
+  total_expense: number
+}
+
+// Form types for personal cashflow
+export interface PersonalAccountFormData {
+  name: string
+  color?: string
+}
+
+export interface PersonalCategoryFormData {
+  name: string
+  type: 'income' | 'expense'
+  color?: string
+}
+
+export interface PersonalTransactionFormData {
+  account_id: string
+  category_id?: string
+  day: number
+  amount: number
+  note?: string
+}

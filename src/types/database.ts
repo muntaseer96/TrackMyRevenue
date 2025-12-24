@@ -326,6 +326,158 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_accounts: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          color: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          color?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          color?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      personal_categories: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          type: string
+          color: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          type: string
+          color?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          type?: string
+          color?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      personal_balances: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          year: number
+          month: number
+          beginning_balance: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          year: number
+          month: number
+          beginning_balance?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          year?: number
+          month?: number
+          beginning_balance?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_balances_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "personal_accounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      personal_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          category_id: string | null
+          year: number
+          month: number
+          day: number
+          amount: number
+          note: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          category_id?: string | null
+          year: number
+          month: number
+          day: number
+          amount: number
+          note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          category_id?: string | null
+          year?: number
+          month?: number
+          day?: number
+          amount?: number
+          note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "personal_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "personal_categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

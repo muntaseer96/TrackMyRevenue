@@ -10,6 +10,7 @@ import {
   LogOut,
   Upload,
   X,
+  Wallet,
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { cn } from '../../lib/utils'
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/categories', icon: FolderTree, label: 'Categories' },
   { to: '/investments', icon: TrendingUp, label: 'Investments' },
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
+  { to: '/cashflow', icon: Wallet, label: 'Cashflow' },
   { to: '/import', icon: Upload, label: 'Import Data' },
   { to: '/profile', icon: User, label: 'Profile' },
 ]
