@@ -1,25 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { TrendingUp, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 export function Login() {
   const navigate = useNavigate()
-  const { signIn, signUp, loading, error, clearError } = useAuthStore()
+  const { signIn, signUp, user, initialize, error, clearError } = useAuthStore()
 
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Initialize auth and redirect if already logged in
+  useEffect(() => {
+    initialize()
+  }, [initialize])
+
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
+    setIsSubmitting(true)
 
     const { error } = isSignUp
       ? await signUp(email, password)
       : await signIn(email, password)
 
+    setIsSubmitting(false)
     if (!error) {
       navigate('/')
     }
@@ -104,10 +118,10 @@ export function Login() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isSignUp ? (
                 'Create Account'
