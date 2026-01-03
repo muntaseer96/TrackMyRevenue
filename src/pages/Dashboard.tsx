@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Header } from '../components/layout/Header'
 import { DateRangeFilter } from '../components/layout/DateRangeFilter'
 import { KPICards, MonthlyTrendChart, RevenueByWebsiteChart, CategoryPieChart } from '../components/dashboard'
@@ -7,6 +8,11 @@ import { useFilterStore, formatDateRange } from '../stores/filterStore'
 import { DEFAULT_EXCHANGE_RATE } from '../hooks/useExchangeRates'
 
 export function Dashboard() {
+  // Debug: Track mount/unmount
+  useEffect(() => {
+    console.log('[Dashboard] MOUNTED at:', new Date().toISOString())
+    return () => console.log('[Dashboard] UNMOUNTED at:', new Date().toISOString())
+  }, [])
   const { year, startMonth, endMonth } = useFilterStore()
   const { data: dashboardData, isLoading: isDataLoading } = useDashboardData()
   const {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '../components/layout/Header'
 import { Button } from '../components/ui/Button'
 import { WebsiteList } from '../components/websites/WebsiteList'
@@ -14,6 +14,11 @@ import type { Website, WebsiteFormData } from '../types'
 import { Plus } from 'lucide-react'
 
 export function Websites() {
+  // Debug: Track mount/unmount
+  useEffect(() => {
+    console.log('[Websites] MOUNTED at:', new Date().toISOString())
+    return () => console.log('[Websites] UNMOUNTED at:', new Date().toISOString())
+  }, [])
   // State for modals
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
