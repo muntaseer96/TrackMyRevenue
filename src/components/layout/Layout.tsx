@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Menu, TrendingUp } from 'lucide-react'
 import { Sidebar } from './Sidebar'
@@ -6,11 +6,6 @@ import { Sidebar } from './Sidebar'
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-
-  // Debug: Log navigation changes
-  useEffect(() => {
-    console.log('[Layout] Route changed to:', location.pathname, 'at:', new Date().toISOString())
-  }, [location.pathname])
 
   const openSidebar = () => setSidebarOpen(true)
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])

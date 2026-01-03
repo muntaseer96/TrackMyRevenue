@@ -94,7 +94,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <li key={item.to}>
                 <NavLink
                   to={item.to}
-                  onClick={() => console.log('[Sidebar] Clicked nav to:', item.to, 'from:', location.pathname)}
                   className={({ isActive }) =>
                     cn(
                       'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',

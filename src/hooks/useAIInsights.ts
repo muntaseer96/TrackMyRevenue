@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useFinancialSummary } from './useFinancialSummary'
 import { analyzeFinancials } from '../lib/claude'
 import type { AIInsights, CachedInsights } from '../types/ai'
@@ -52,34 +52,42 @@ export function useAIInsights() {
   // Check for API key availability
   const hasApiKey = Boolean(import.meta.env.VITE_CLAUDE_API_KEY)
 
-  // Load cached insights on mount
+  // Track last processed dataHash to prevent re-processing
+  const lastProcessedHash = useRef<string>('')
+  const hasFetched = useRef(false)
+
+  // Load cached insights on mount and when data changes
   useEffect(() => {
+    if (!dataHash || dataHash === lastProcessedHash.current) return
+
+    // Reset fetch flag when data changes
+    hasFetched.current = false
+
     const cached = getCachedInsights()
     if (cached) {
       setInsights(cached.insights)
       // Mark as stale if data has changed or cache is old
       setIsStale(!isCacheValid(cached, dataHash))
     }
+    lastProcessedHash.current = dataHash
   }, [dataHash])
 
   // Auto-fetch insights when summary is ready and cache is invalid
   useEffect(() => {
     if (!hasApiKey || summaryLoading || !summary || !dataHash) return
+    if (hasFetched.current) return // Prevent multiple fetches
 
     const cached = getCachedInsights()
 
-    // If we have valid cache, use it
+    // If we have valid cache, don't fetch
     if (isCacheValid(cached, dataHash)) {
-      if (cached) {
-        setInsights(cached.insights)
-        setIsStale(false)
-      }
       return
     }
 
     // Cache is invalid (data changed or expired) - fetch new insights
+    hasFetched.current = true
     fetchInsights()
-  }, [hasApiKey, summaryLoading, summary, dataHash])
+  }, [hasApiKey, summaryLoading, dataHash]) // Removed summary from deps - only need dataHash
 
   const fetchInsights = useCallback(async () => {
     if (!summary || !hasApiKey) return
