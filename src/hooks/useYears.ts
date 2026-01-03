@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useYearStore } from '../stores/yearStore'
+import { useFilterStore } from '../stores/filterStore'
 import type { Profile } from '../types'
 
 // Query keys
@@ -15,6 +16,7 @@ export const yearKeys = {
 export function useUserYears() {
   const { user } = useAuthStore()
   const { setAvailableYears, setSelectedYear, selectedYear } = useYearStore()
+  const { setYear } = useFilterStore()
 
   const query = useQuery({
     queryKey: yearKeys.profile(user?.id ?? ''),
@@ -39,10 +41,15 @@ export function useUserYears() {
       setAvailableYears(query.data.available_years)
       // If stored selected year is not in available years, use the first available
       if (!query.data.available_years.includes(selectedYear)) {
-        setSelectedYear(query.data.available_years[0] ?? new Date().getFullYear())
+        const newYear = query.data.available_years[0] ?? new Date().getFullYear()
+        setSelectedYear(newYear)
+        setYear(newYear) // Sync to filterStore
+      } else {
+        // Sync current selected year to filterStore on initial load
+        setYear(selectedYear)
       }
     }
-  }, [query.data, setAvailableYears, setSelectedYear, selectedYear])
+  }, [query.data, setAvailableYears, setSelectedYear, selectedYear, setYear])
 
   return query
 }
@@ -52,6 +59,7 @@ export function useCreateYear() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const { availableYears, addYear } = useYearStore()
+  const { setYear } = useFilterStore()
 
   return useMutation({
     mutationFn: async (newYear: number) => {
@@ -177,6 +185,8 @@ export function useCreateYear() {
     onSuccess: ({ newYear }) => {
       // Add year to local store
       addYear(newYear)
+      // Sync to filterStore for dashboard
+      setYear(newYear)
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: yearKeys.all })
       queryClient.invalidateQueries({ queryKey: ['websites'] })
@@ -190,6 +200,7 @@ export function useCreateYear() {
 export function useUpdateSelectedYear() {
   const { user } = useAuthStore()
   const { setSelectedYear } = useYearStore()
+  const { setYear } = useFilterStore()
 
   return useMutation({
     mutationFn: async (year: number) => {
@@ -205,6 +216,8 @@ export function useUpdateSelectedYear() {
     },
     onSuccess: (year) => {
       setSelectedYear(year)
+      // Also update filterStore to sync dashboard data
+      setYear(year)
     },
   })
 }
