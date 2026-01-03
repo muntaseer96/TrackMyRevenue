@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Menu, TrendingUp } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
 
   const openSidebar = () => setSidebarOpen(true)
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
@@ -32,7 +33,7 @@ export function Layout() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1">
+        <main className="flex-1" key={location.pathname}>
           <Outlet />
         </main>
       </div>

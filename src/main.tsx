@@ -9,6 +9,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnMount: 'always', // Ensure fresh data on navigation
       retry: 1,
     },
   },
