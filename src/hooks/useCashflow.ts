@@ -9,6 +9,9 @@ import type {
   PersonalAccountFormData,
   PersonalCategoryFormData,
   PersonalTransactionFormData,
+  BalanceCategory,
+  BalanceCategoryFormData,
+  BalanceCategoryWithBalance,
 } from '../types'
 
 // Query keys
@@ -24,6 +27,9 @@ export const cashflowKeys = {
   transactions: () => [...cashflowKeys.all, 'transactions'] as const,
   transactionList: (userId: string, year: number, month: number, accountId?: string) =>
     [...cashflowKeys.transactions(), userId, year, month, accountId] as const,
+  balanceCategories: () => [...cashflowKeys.all, 'balanceCategories'] as const,
+  balanceCategoryList: (userId: string, accountId?: string) =>
+    [...cashflowKeys.balanceCategories(), userId, accountId] as const,
 }
 
 // Default categories to seed on first use
@@ -384,7 +390,7 @@ export function usePersonalTransactions(year: number, month: number, accountId?:
 
       let query = supabase
         .from('personal_transactions')
-        .select('*, category:personal_categories(*)')
+        .select('*, category:personal_categories(*), balance_category:balance_categories(*)')
         .eq('user_id', user.id)
         .eq('year', year)
         .eq('month', month)
@@ -426,13 +432,14 @@ export function useCreatePersonalTransaction() {
           user_id: user.id,
           account_id: data.account_id,
           category_id: data.category_id || null,
+          balance_category_id: data.balance_category_id || null,
           year,
           month,
           day: data.day,
           amount: data.amount,
           note: data.note || null,
         })
-        .select('*, category:personal_categories(*)')
+        .select('*, category:personal_categories(*), balance_category:balance_categories(*)')
         .single()
 
       if (error) throw error
@@ -460,13 +467,14 @@ export function useUpdatePersonalTransaction() {
         .update({
           account_id: data.account_id,
           category_id: data.category_id || null,
+          balance_category_id: data.balance_category_id || null,
           day: data.day,
           amount: data.amount,
           note: data.note,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .select('*, category:personal_categories(*)')
+        .select('*, category:personal_categories(*), balance_category:balance_categories(*)')
         .single()
 
       if (error) throw error
@@ -588,5 +596,174 @@ export function useCashflowStats(year: number, month: number) {
     totalIncome,
     totalExpense,
     netChange,
+  }
+}
+
+// ============================================
+// BALANCE CATEGORIES (Sub-balances per account)
+// ============================================
+
+export function useBalanceCategories(accountId?: string) {
+  const { user } = useAuthStore()
+
+  return useQuery({
+    queryKey: cashflowKeys.balanceCategoryList(user?.id ?? '', accountId),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      let query = supabase
+        .from('balance_categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+
+      if (accountId) {
+        query = query.eq('account_id', accountId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+      return data as BalanceCategory[]
+    },
+    enabled: !!user?.id,
+  })
+}
+
+export function useCreateBalanceCategory() {
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async ({
+      accountId,
+      data,
+    }: {
+      accountId: string
+      data: BalanceCategoryFormData
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      const { data: category, error } = await supabase
+        .from('balance_categories')
+        .insert({
+          user_id: user.id,
+          account_id: accountId,
+          name: data.name,
+          initial_balance: data.initial_balance,
+          color: data.color || '#6366F1',
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return category as BalanceCategory
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.balanceCategories() })
+    },
+  })
+}
+
+export function useUpdateBalanceCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string
+      data: BalanceCategoryFormData
+    }) => {
+      const { data: category, error } = await supabase
+        .from('balance_categories')
+        .update({
+          name: data.name,
+          initial_balance: data.initial_balance,
+          color: data.color,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return category as BalanceCategory
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.balanceCategories() })
+    },
+  })
+}
+
+export function useDeleteBalanceCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('balance_categories')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      return id
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.balanceCategories() })
+      // Also invalidate transactions since balance_category_id will be set to null
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.transactions() })
+    },
+  })
+}
+
+// Compute current balance for each balance category
+export function useBalanceCategoryStats(accountId: string) {
+  const { data: balanceCategories, isLoading: categoriesLoading } = useBalanceCategories(accountId)
+  const { user } = useAuthStore()
+
+  // Fetch ALL transactions for this account (no month filter) to calculate running balances
+  const { data: allTransactions, isLoading: transactionsLoading } = useQuery({
+    queryKey: [...cashflowKeys.transactions(), 'all', user?.id, accountId],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase
+        .from('personal_transactions')
+        .select('id, amount, balance_category_id')
+        .eq('user_id', user.id)
+        .eq('account_id', accountId)
+        .not('balance_category_id', 'is', null)
+
+      if (error) throw error
+      return data as { id: string; amount: number; balance_category_id: string }[]
+    },
+    enabled: !!user?.id && !!accountId,
+  })
+
+  const isLoading = categoriesLoading || transactionsLoading
+
+  if (!balanceCategories) {
+    return { isLoading, balanceCategories: [] }
+  }
+
+  // Calculate current balance for each category
+  const categoriesWithBalance: BalanceCategoryWithBalance[] = balanceCategories.map(category => {
+    const categoryTransactions = (allTransactions || []).filter(
+      t => t.balance_category_id === category.id
+    )
+    const transactionSum = categoryTransactions.reduce((sum, t) => sum + t.amount, 0)
+    const currentBalance = category.initial_balance + transactionSum
+
+    return {
+      ...category,
+      current_balance: currentBalance,
+    }
+  })
+
+  return {
+    isLoading,
+    balanceCategories: categoriesWithBalance,
   }
 }

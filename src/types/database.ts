@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      balance_categories: {
+        Row: {
+          account_id: string
+          color: string | null
+          created_at: string | null
+          id: string
+          initial_balance: number
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          initial_balance?: number
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          initial_balance?: number
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_categories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "personal_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -427,6 +468,7 @@ export type Database = {
           user_id: string
           account_id: string
           category_id: string | null
+          balance_category_id: string | null
           year: number
           month: number
           day: number
@@ -440,6 +482,7 @@ export type Database = {
           user_id: string
           account_id: string
           category_id?: string | null
+          balance_category_id?: string | null
           year: number
           month: number
           day: number
@@ -453,6 +496,7 @@ export type Database = {
           user_id?: string
           account_id?: string
           category_id?: string | null
+          balance_category_id?: string | null
           year?: number
           month?: number
           day?: number
@@ -467,6 +511,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "personal_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_transactions_balance_category_id_fkey"
+            columns: ["balance_category_id"]
+            isOneToOne: false
+            referencedRelation: "balance_categories"
             referencedColumns: ["id"]
           },
           {

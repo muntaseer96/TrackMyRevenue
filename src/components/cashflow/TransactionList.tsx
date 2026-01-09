@@ -137,17 +137,31 @@ export function TransactionList({
                   </span>
                 </TableCell>
                 <TableCell>
-                  {transaction.category ? (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      transaction.category.type === 'income'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {transaction.category.name}
-                    </span>
-                  ) : (
-                    <span className="text-gray-400 text-sm">Uncategorized</span>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1">
+                    {transaction.category ? (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        transaction.category.type === 'income'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {transaction.category.name}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Uncategorized</span>
+                    )}
+                    {transaction.balance_category && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                        title="Balance Category"
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: transaction.balance_category.color }}
+                        />
+                        {transaction.balance_category.name}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <span className="text-gray-600 text-sm line-clamp-1" title={transaction.note || ''}>

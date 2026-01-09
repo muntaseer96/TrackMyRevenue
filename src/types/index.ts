@@ -224,6 +224,7 @@ export interface PersonalTransaction {
   user_id: string
   account_id: string
   category_id: string | null
+  balance_category_id: string | null
   year: number
   month: number
   day: number
@@ -233,9 +234,26 @@ export interface PersonalTransaction {
   updated_at: string
 }
 
+export interface BalanceCategory {
+  id: string
+  user_id: string
+  account_id: string
+  name: string
+  initial_balance: number
+  color: string
+  created_at: string
+  updated_at: string
+}
+
 // Extended types for UI
 export interface PersonalTransactionWithCategory extends PersonalTransaction {
   category: PersonalCategory | null
+  balance_category?: BalanceCategory | null
+}
+
+// Computed type for balance category with running balance
+export interface BalanceCategoryWithBalance extends BalanceCategory {
+  current_balance: number // initial_balance + sum of tagged transactions
 }
 
 export interface AccountSummary extends PersonalAccount {
@@ -261,7 +279,14 @@ export interface PersonalCategoryFormData {
 export interface PersonalTransactionFormData {
   account_id: string
   category_id?: string
+  balance_category_id?: string
   day: number
   amount: number
   note?: string
+}
+
+export interface BalanceCategoryFormData {
+  name: string
+  initial_balance: number
+  color?: string
 }

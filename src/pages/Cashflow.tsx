@@ -12,6 +12,8 @@ import { TransactionForm } from '../components/cashflow/TransactionForm'
 import { TransactionFilters } from '../components/cashflow/TransactionFilters'
 import { BalanceForm } from '../components/cashflow/BalanceForm'
 import { CashflowCategoryManager } from '../components/cashflow/CashflowCategoryManager'
+import { BalanceCategoryManager } from '../components/cashflow/BalanceCategoryManager'
+import { BalanceCategoryCards } from '../components/cashflow/BalanceCategoryCards'
 import {
   usePersonalAccounts,
   usePersonalCategories,
@@ -24,6 +26,7 @@ import {
   useUpdatePersonalTransaction,
   useDeletePersonalTransaction,
   useUpsertPersonalBalance,
+  useBalanceCategories,
 } from '../hooks/useCashflow'
 import type {
   PersonalAccount,
@@ -49,12 +52,14 @@ export function Cashflow() {
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<PersonalTransactionWithCategory | null>(null)
   const [balanceAccount, setBalanceAccount] = useState<AccountSummary | null>(null)
+  const [balanceCategoryAccount, setBalanceCategoryAccount] = useState<PersonalAccount | null>(null)
   const [deleteConfirmAccount, setDeleteConfirmAccount] = useState<PersonalAccount | null>(null)
   const [deleteConfirmTransaction, setDeleteConfirmTransaction] = useState<PersonalTransactionWithCategory | null>(null)
 
   // Data queries
   const { data: accounts = [], isLoading: accountsLoading } = usePersonalAccounts()
   const { data: categories = [] } = usePersonalCategories()
+  const { data: balanceCategories = [] } = useBalanceCategories()
   const { data: transactions = [], isLoading: transactionsLoading } = usePersonalTransactions(
     year,
     month,
@@ -142,6 +147,10 @@ export function Cashflow() {
     setBalanceAccount(account)
   }
 
+  const handleManageBalanceCategories = (account: AccountSummary) => {
+    setBalanceCategoryAccount(account)
+  }
+
   const handleBalanceSubmit = async (data: { beginning_balance: number }) => {
     if (!balanceAccount) return
     try {
@@ -180,6 +189,7 @@ export function Cashflow() {
   const handleTransactionSubmit = async (data: {
     account_id: string
     category_id?: string
+    balance_category_id?: string
     day: number
     amount: number
     note?: string
@@ -265,6 +275,7 @@ export function Cashflow() {
               onEdit={handleEditAccount}
               onDelete={(account) => setDeleteConfirmAccount(account)}
               onSetBalance={handleSetBalance}
+              onManageBalanceCategories={handleManageBalanceCategories}
               onSelectAccount={handleSelectAccount}
               isLoading={accountsLoading || statsLoading}
             />
@@ -296,6 +307,9 @@ export function Cashflow() {
           {/* Individual Account Tabs */}
           {accounts.map((account) => (
             <TabsContent key={account.id} value={account.id} className="space-y-6">
+              {/* Balance Category Cards */}
+              <BalanceCategoryCards accountId={account.id} />
+
               <TransactionFilters
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -346,6 +360,7 @@ export function Cashflow() {
         transaction={editingTransaction}
         accounts={accounts}
         categories={categories}
+        balanceCategories={balanceCategories}
         defaultAccountId={activeTab !== 'all' && activeTab !== 'categories' ? activeTab : undefined}
         currentMonth={month}
         isLoading={createTransactionMutation.isPending || updateTransactionMutation.isPending}
@@ -361,6 +376,15 @@ export function Cashflow() {
         month={month}
         isLoading={upsertBalanceMutation.isPending}
       />
+
+      {/* Balance Category Manager Modal */}
+      {balanceCategoryAccount && (
+        <BalanceCategoryManager
+          isOpen={!!balanceCategoryAccount}
+          onClose={() => setBalanceCategoryAccount(null)}
+          account={balanceCategoryAccount}
+        />
+      )}
 
       {/* Delete Account Confirmation */}
       {deleteConfirmAccount && (

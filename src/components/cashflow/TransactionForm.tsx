@@ -23,11 +23,13 @@ import type {
   PersonalAccount,
   PersonalCategory,
   PersonalTransactionWithCategory,
+  BalanceCategory,
 } from '../../types'
 
 const transactionSchema = z.object({
   account_id: z.string().min(1, 'Account is required'),
   category_id: z.string().optional(),
+  balance_category_id: z.string().optional(),
   day: z.number().min(1).max(31),
   amount: z.number().refine((val) => val !== 0, 'Amount cannot be zero'),
   note: z.string().optional(),
@@ -42,6 +44,7 @@ interface TransactionFormProps {
   transaction?: PersonalTransactionWithCategory | null
   accounts: PersonalAccount[]
   categories: PersonalCategory[]
+  balanceCategories?: BalanceCategory[]
   defaultAccountId?: string
   currentMonth: number
   isLoading?: boolean
@@ -54,6 +57,7 @@ export function TransactionForm({
   transaction,
   accounts,
   categories,
+  balanceCategories = [],
   defaultAccountId,
   currentMonth,
   isLoading = false,
@@ -72,6 +76,7 @@ export function TransactionForm({
     defaultValues: {
       account_id: defaultAccountId || '',
       category_id: '',
+      balance_category_id: '',
       day: new Date().getDate(),
       amount: 0,
       note: '',
@@ -80,6 +85,12 @@ export function TransactionForm({
 
   const selectedCategoryId = watch('category_id')
   const selectedAccountId = watch('account_id')
+  const selectedBalanceCategoryId = watch('balance_category_id')
+
+  // Filter balance categories for the selected account
+  const accountBalanceCategories = balanceCategories.filter(
+    bc => bc.account_id === selectedAccountId
+  )
 
   // Get the number of days in the current month
   const getDaysInMonth = (month: number, year: number = new Date().getFullYear()) => {
@@ -94,6 +105,7 @@ export function TransactionForm({
         reset({
           account_id: transaction.account_id,
           category_id: transaction.category_id || '',
+          balance_category_id: transaction.balance_category_id || '',
           day: transaction.day,
           amount: transaction.amount,
           note: transaction.note || '',
@@ -102,6 +114,7 @@ export function TransactionForm({
         reset({
           account_id: defaultAccountId || accounts[0]?.id || '',
           category_id: '',
+          balance_category_id: '',
           day: Math.min(new Date().getDate(), daysInMonth),
           amount: 0,
           note: '',
@@ -109,6 +122,18 @@ export function TransactionForm({
       }
     }
   }, [isOpen, transaction, defaultAccountId, accounts, reset, daysInMonth])
+
+  // Clear balance category when account changes (if the category doesn't belong to new account)
+  useEffect(() => {
+    if (selectedBalanceCategoryId && selectedBalanceCategoryId !== 'none') {
+      const categoryBelongsToAccount = balanceCategories.some(
+        bc => bc.id === selectedBalanceCategoryId && bc.account_id === selectedAccountId
+      )
+      if (!categoryBelongsToAccount) {
+        setValue('balance_category_id', '')
+      }
+    }
+  }, [selectedAccountId, selectedBalanceCategoryId, balanceCategories, setValue])
 
   const handleFormSubmit = (data: TransactionFormData) => {
     onSubmit(data)
@@ -220,6 +245,40 @@ export function TransactionForm({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Balance Category Selection - Only show if account has balance categories */}
+            {accountBalanceCategories.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Balance Category (Optional)
+                </label>
+                <Select
+                  value={selectedBalanceCategoryId || 'none'}
+                  onValueChange={(value) => setValue('balance_category_id', value === 'none' ? undefined : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select balance category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {accountBalanceCategories.map((bc) => (
+                      <SelectItem key={bc.id} value={bc.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: bc.color }}
+                          />
+                          {bc.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Tag this transaction to a balance category for sub-balance tracking
+                </p>
+              </div>
+            )}
 
             {/* Note */}
             <Textarea

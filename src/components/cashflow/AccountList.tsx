@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Wallet } from 'lucide-react'
+import { Edit2, Trash2, Wallet, Layers } from 'lucide-react'
 import { Button } from '../ui/Button'
 import type { AccountSummary } from '../../types'
 
@@ -7,6 +7,7 @@ interface AccountListProps {
   onEdit: (account: AccountSummary) => void
   onDelete: (account: AccountSummary) => void
   onSetBalance: (account: AccountSummary) => void
+  onManageBalanceCategories: (account: AccountSummary) => void
   onSelectAccount: (accountId: string) => void
   isLoading?: boolean
 }
@@ -21,6 +22,7 @@ export function AccountList({
   onEdit,
   onDelete,
   onSetBalance,
+  onManageBalanceCategories,
   onSelectAccount,
   isLoading = false,
 }: AccountListProps) {
@@ -68,6 +70,18 @@ export function AccountList({
               <h3 className="font-semibold text-gray-900">{account.name}</h3>
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onManageBalanceCategories(account)
+                }}
+                aria-label="Manage balance categories"
+                title="Manage balance categories"
+              >
+                <Layers className="w-4 h-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
