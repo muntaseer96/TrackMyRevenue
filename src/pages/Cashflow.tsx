@@ -363,6 +363,7 @@ export function Cashflow() {
         balanceCategories={balanceCategories}
         defaultAccountId={activeTab !== 'all' && activeTab !== 'categories' ? activeTab : undefined}
         currentMonth={month}
+        currentYear={year}
         isLoading={createTransactionMutation.isPending || updateTransactionMutation.isPending}
       />
 

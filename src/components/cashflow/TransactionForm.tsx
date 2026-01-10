@@ -47,6 +47,7 @@ interface TransactionFormProps {
   balanceCategories?: BalanceCategory[]
   defaultAccountId?: string
   currentMonth: number
+  currentYear: number
   isLoading?: boolean
 }
 
@@ -60,6 +61,7 @@ export function TransactionForm({
   balanceCategories = [],
   defaultAccountId,
   currentMonth,
+  currentYear,
   isLoading = false,
 }: TransactionFormProps) {
   const isEditing = !!transaction
@@ -78,7 +80,7 @@ export function TransactionForm({
       category_id: '',
       balance_category_id: '',
       day: new Date().getDate(),
-      amount: 0,
+      amount: undefined as unknown as number,
       note: '',
     },
   })
@@ -93,11 +95,23 @@ export function TransactionForm({
   )
 
   // Get the number of days in the current month
-  const getDaysInMonth = (month: number, year: number = new Date().getFullYear()) => {
+  const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month, 0).getDate()
   }
 
-  const daysInMonth = getDaysInMonth(currentMonth)
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear)
+
+  // Watch the day value to display day of week
+  const selectedDay = watch('day')
+
+  // Get day of week name
+  const getDayOfWeekName = (day: number) => {
+    if (!day || day < 1 || day > daysInMonth) return ''
+    const date = new Date(currentYear, currentMonth - 1, day)
+    return date.toLocaleDateString('en-US', { weekday: 'long' })
+  }
+
+  const dayOfWeekName = getDayOfWeekName(selectedDay)
 
   useEffect(() => {
     if (isOpen) {
@@ -116,7 +130,7 @@ export function TransactionForm({
           category_id: '',
           balance_category_id: '',
           day: Math.min(new Date().getDate(), daysInMonth),
-          amount: 0,
+          amount: undefined as unknown as number,
           note: '',
         })
       }
@@ -191,6 +205,7 @@ export function TransactionForm({
                 min={1}
                 max={daysInMonth}
                 error={errors.day?.message}
+                hint={dayOfWeekName}
                 {...register('day', { valueAsNumber: true })}
               />
               <Input
