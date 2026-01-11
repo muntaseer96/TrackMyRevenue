@@ -144,20 +144,17 @@ export function useWebsiteStats(websiteId: string | undefined) {
   })
   const websiteCountForAllocation = Math.max(websitesWithRevenue.size, 1)
 
-  // Calculate global expense allocation per website
-  const globalMonthlyExpenses = globalExpenses.filter(exp => exp.recurrence === 'monthly' || !exp.recurrence)
-  const globalYearlyExpenses = globalExpenses.filter(exp => exp.recurrence === 'yearly')
-
-  const totalGlobalMonthlyExpense = globalMonthlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
-  const totalGlobalYearlyExpense = globalYearlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
-  const totalGlobalExpense = totalGlobalMonthlyExpense + totalGlobalYearlyExpense
-
-  // This website's share of global expenses (equal split)
-  const allocatedGlobalExpense = totalGlobalExpense / websiteCountForAllocation
-  const allocatedGlobalExpensePerMonth = allocatedGlobalExpense / 12
+  // Helper function to get allocated global expense for a specific month
+  const getMonthlyAllocatedGlobalExpense = (month: number): number => {
+    // Get global expenses for this specific month
+    const monthGlobalExpenses = globalExpenses.filter(exp => exp.month === month)
+    const monthlyTotal = monthGlobalExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
+    return monthlyTotal / websiteCountForAllocation
+  }
 
   // Calculate amortized annual expenses (website-specific yearly expenses spread across 12 months)
-  const annualExpenseAmortized = expenses.reduce((sum, exp) => sum + exp.cost_usd / 12, 0)
+  const websiteYearlyExpenses = expenses.filter(exp => exp.recurrence === 'yearly')
+  const annualExpenseAmortized = websiteYearlyExpenses.reduce((sum, exp) => sum + exp.cost_usd / 12, 0)
 
   // Calculate average exchange rate
   const avgExchangeRate = exchangeRates.length
@@ -177,11 +174,13 @@ export function useWebsiteStats(websiteId: string | undefined) {
     }
   })
 
-  // Add amortized annual expenses to total (spread across 12 months)
-  totalExpense += annualExpenseAmortized * 12 // Full year total for yearly summary
+  // Add website-specific yearly expenses (full amount for yearly summary)
+  totalExpense += websiteYearlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
 
-  // Add allocated global expenses
-  totalExpense += allocatedGlobalExpense
+  // Add allocated global expenses (sum of actual monthly data)
+  const totalAllocatedGlobalExpense = Array.from({ length: 12 }, (_, i) => i + 1)
+    .reduce((sum, month) => sum + getMonthlyAllocatedGlobalExpense(month), 0)
+  totalExpense += totalAllocatedGlobalExpense
 
   const totalProfit = totalRevenue - totalExpense
   const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
@@ -203,11 +202,11 @@ export function useWebsiteStats(websiteId: string | undefined) {
       }
     })
 
-    // Add amortized annual expenses to each month
+    // Add amortized annual expenses to each month (website-specific yearly expenses)
     expense += annualExpenseAmortized
 
-    // Add allocated global expenses per month
-    expense += allocatedGlobalExpensePerMonth
+    // Add allocated global expenses for THIS specific month only
+    expense += getMonthlyAllocatedGlobalExpense(month)
 
     return {
       month,
@@ -265,11 +264,11 @@ export function useWebsiteStats(websiteId: string | undefined) {
   })
 
   // Add allocated global expenses to expense breakdown
-  if (allocatedGlobalExpense > 0) {
+  if (totalAllocatedGlobalExpense > 0) {
     expenseByCategory.push({
       categoryId: 'allocated-global',
       categoryName: 'Shared Expenses (Allocated)',
-      amount: allocatedGlobalExpense,
+      amount: totalAllocatedGlobalExpense,
       type: 'expense' as const,
     })
   }
