@@ -217,8 +217,11 @@ function ExchangeRateInput({ rate, onSave, isSaving }: ExchangeRateInputProps) {
 }
 
 export function MonthlyDataEntry({ websiteId }: MonthlyDataEntryProps) {
-  // Default to current month
-  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1)
+  // Default to previous month (users typically input last month's data)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const currentMonth = new Date().getMonth() + 1 // 1-12
+    return currentMonth === 1 ? 12 : currentMonth - 1
+  })
 
   // Currency view preference
   const { currencyView } = useCurrencyStore()
