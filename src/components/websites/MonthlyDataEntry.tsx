@@ -49,10 +49,12 @@ function AmountInput({
   const [value, setValue] = useState(initialAmount.toString())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevInitialAmount = useRef(initialAmount)
+  const isFocusedRef = useRef(false)
 
   // Update local value when initialAmount changes (e.g., after data refetch)
+  // But NOT while user is actively editing (focused)
   useEffect(() => {
-    if (prevInitialAmount.current !== initialAmount) {
+    if (prevInitialAmount.current !== initialAmount && !isFocusedRef.current) {
       setValue(initialAmount.toString())
       prevInitialAmount.current = initialAmount
     }
@@ -83,17 +85,21 @@ function AmountInput({
 
   // Clear "0" on focus so user doesn't have to delete it
   const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = true
     if (e.target.value === '0') {
       setValue('')
     }
   }, [])
 
-  // Restore "0" on blur if empty
+  // Restore "0" on blur if empty, and sync state
   const handleBlur = useCallback(() => {
+    isFocusedRef.current = false
     if (value === '') {
       setValue('0')
     }
-  }, [value])
+    // Update ref to prevent stale sync after blur
+    prevInitialAmount.current = initialAmount
+  }, [value, initialAmount])
 
   // Cleanup debounce on unmount
   useEffect(() => {
@@ -133,9 +139,10 @@ function ExchangeRateInput({ rate, onSave, isSaving }: ExchangeRateInputProps) {
   const [value, setValue] = useState(rate.toString())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevRate = useRef(rate)
+  const isFocusedRef = useRef(false)
 
   useEffect(() => {
-    if (prevRate.current !== rate) {
+    if (prevRate.current !== rate && !isFocusedRef.current) {
       setValue(rate.toString())
       prevRate.current = rate
     }
@@ -163,17 +170,21 @@ function ExchangeRateInput({ rate, onSave, isSaving }: ExchangeRateInputProps) {
 
   // Clear value on focus if it equals default rate
   const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = true
     if (e.target.value === DEFAULT_EXCHANGE_RATE.toString()) {
       setValue('')
     }
   }, [])
 
-  // Restore default rate on blur if empty
+  // Restore default rate on blur if empty, and sync state
   const handleBlur = useCallback(() => {
+    isFocusedRef.current = false
     if (value === '') {
       setValue(DEFAULT_EXCHANGE_RATE.toString())
     }
-  }, [value])
+    // Update ref to prevent stale sync after blur
+    prevRate.current = rate
+  }, [value, rate])
 
   useEffect(() => {
     return () => {
