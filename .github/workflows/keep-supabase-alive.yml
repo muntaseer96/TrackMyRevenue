@@ -1,0 +1,33 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    # Run every 5 days at 00:00 UTC to prevent Supabase from pausing (pauses after 7 days of inactivity)
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to keep it active
+        run: |
+          echo "Pinging Supabase to prevent automatic pause..."
+
+          # Ping the Supabase REST API health endpoint
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+
+          echo "Response status: $response"
+
+          if [ "$response" -eq 200 ] || [ "$response" -eq 401 ]; then
+            echo "Supabase is alive and responding!"
+          else
+            echo "Warning: Unexpected response from Supabase"
+            exit 1
+          fi
+
+      - name: Log timestamp
+        run: echo "Keep-alive ping completed at $(date -u)"
