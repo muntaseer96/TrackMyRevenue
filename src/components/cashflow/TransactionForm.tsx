@@ -88,6 +88,7 @@ export function TransactionForm({
   const selectedCategoryId = watch('category_id')
   const selectedAccountId = watch('account_id')
   const selectedBalanceCategoryId = watch('balance_category_id')
+  const watchedAmount = watch('amount')
 
   // Filter balance categories for the selected account
   const accountBalanceCategories = balanceCategories.filter(
@@ -157,6 +158,24 @@ export function TransactionForm({
   const incomeCategories = categories.filter(c => c.type === 'income')
   const expenseCategories = categories.filter(c => c.type === 'expense')
 
+  // Determine which category type to show based on amount
+  const amountType = watchedAmount > 0 ? 'income' : watchedAmount < 0 ? 'expense' : null
+  const filteredCategories = amountType === 'income'
+    ? incomeCategories
+    : amountType === 'expense'
+      ? expenseCategories
+      : categories
+
+  // Clear category if amount sign changes and selected category doesn't match
+  useEffect(() => {
+    if (selectedCategoryId && selectedCategoryId !== 'none' && amountType) {
+      const selectedCategory = categories.find(c => c.id === selectedCategoryId)
+      if (selectedCategory && selectedCategory.type !== amountType) {
+        setValue('category_id', '')
+      }
+    }
+  }, [amountType, selectedCategoryId, categories, setValue])
+
   return (
     <Modal open={isOpen} onOpenChange={onClose}>
       <ModalContent>
@@ -223,6 +242,11 @@ export function TransactionForm({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Category (Optional)
+                {amountType && (
+                  <span className={`ml-2 text-xs ${amountType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    — showing {amountType} categories
+                  </span>
+                )}
               </label>
               <Select
                 value={selectedCategoryId || 'none'}
@@ -233,28 +257,41 @@ export function TransactionForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Uncategorized</SelectItem>
-                  {incomeCategories.length > 0 && (
+                  {/* Show filtered categories based on amount, or all if no amount entered */}
+                  {amountType ? (
+                    // Show only relevant category type
+                    filteredCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // Show all categories grouped when no amount entered
                     <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-green-600 bg-green-50">
-                        Income
-                      </div>
-                      {incomeCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  {expenseCategories.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-red-600 bg-red-50">
-                        Expense
-                      </div>
-                      {expenseCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      {incomeCategories.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-green-600 bg-green-50">
+                            Income
+                          </div>
+                          {incomeCategories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                      {expenseCategories.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-red-600 bg-red-50">
+                            Expense
+                          </div>
+                          {expenseCategories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </>
                   )}
                 </SelectContent>
