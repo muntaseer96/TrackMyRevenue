@@ -97,3 +97,24 @@ npm run lint     # Run ESLint
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+## Session Notes - 2026-01-26
+
+### What was done:
+- Diagnosed and fixed site not loading issue - Supabase project was paused due to 7-day inactivity
+- Restored the paused Supabase project from the dashboard
+- Added GitHub Actions cron job to prevent future Supabase pauses (`.github/workflows/keep-supabase-alive.yml`)
+  - Runs every 5 days to ping Supabase and keep the project active
+  - Configured with `SUPABASE_URL` and `SUPABASE_ANON_KEY` secrets in GitHub repo settings
+  - Tested manually and confirmed working (200 response)
+- Added smart category filtering in transaction form (`src/components/cashflow/TransactionForm.tsx`)
+  - Positive amounts automatically show only income categories
+  - Negative amounts automatically show only expense categories
+  - Label indicates which category type is being shown ("showing income/expense categories")
+  - Auto-clears category selection if amount sign changes and category type doesn't match
+
+### Important context:
+- Supabase project ID: `svvvquhcmqxznxughuvt` (in organization `cmpvifgowmgqmsgvgfuc`)
+- Free-tier Supabase projects pause after 7 days of inactivity - the cron job prevents this
+- GitHub repo: `muntaseer96/TrackMyRevenue`
+- GitHub Actions secrets configured: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
