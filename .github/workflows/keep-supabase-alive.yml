@@ -6,6 +6,9 @@ on:
     - cron: '0 0 */5 * *'
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: write  # Required to push commits to keep repo active
+
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
