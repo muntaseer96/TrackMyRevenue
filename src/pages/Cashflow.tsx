@@ -55,6 +55,7 @@ export function Cashflow() {
   const [balanceCategoryAccount, setBalanceCategoryAccount] = useState<PersonalAccount | null>(null)
   const [deleteConfirmAccount, setDeleteConfirmAccount] = useState<PersonalAccount | null>(null)
   const [deleteConfirmTransaction, setDeleteConfirmTransaction] = useState<PersonalTransactionWithCategory | null>(null)
+  const [lastTransactionDay, setLastTransactionDay] = useState<number | null>(null)
 
   // Data queries
   const { data: accounts = [], isLoading: accountsLoading } = usePersonalAccounts()
@@ -202,6 +203,7 @@ export function Cashflow() {
         })
       } else {
         await createTransactionMutation.mutateAsync({ data, year, month })
+        setLastTransactionDay(data.day)
       }
       setIsTransactionFormOpen(false)
       setEditingTransaction(null)
@@ -362,6 +364,7 @@ export function Cashflow() {
         categories={categories}
         balanceCategories={balanceCategories}
         defaultAccountId={activeTab !== 'all' && activeTab !== 'categories' ? activeTab : undefined}
+        lastTransactionDay={lastTransactionDay}
         currentMonth={month}
         currentYear={year}
         isLoading={createTransactionMutation.isPending || updateTransactionMutation.isPending}

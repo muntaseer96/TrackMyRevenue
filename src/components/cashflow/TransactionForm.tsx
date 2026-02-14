@@ -46,6 +46,7 @@ interface TransactionFormProps {
   categories: PersonalCategory[]
   balanceCategories?: BalanceCategory[]
   defaultAccountId?: string
+  lastTransactionDay?: number | null
   currentMonth: number
   currentYear: number
   isLoading?: boolean
@@ -60,6 +61,7 @@ export function TransactionForm({
   categories,
   balanceCategories = [],
   defaultAccountId,
+  lastTransactionDay,
   currentMonth,
   currentYear,
   isLoading = false,
@@ -126,17 +128,20 @@ export function TransactionForm({
           note: transaction.note || '',
         })
       } else {
+        const defaultDay = lastTransactionDay
+          ? Math.min(lastTransactionDay, daysInMonth)
+          : Math.min(new Date().getDate(), daysInMonth)
         reset({
           account_id: defaultAccountId || accounts[0]?.id || '',
           category_id: '',
           balance_category_id: '',
-          day: Math.min(new Date().getDate(), daysInMonth),
+          day: defaultDay,
           amount: undefined as unknown as number,
           note: '',
         })
       }
     }
-  }, [isOpen, transaction, defaultAccountId, accounts, reset, daysInMonth])
+  }, [isOpen, transaction, defaultAccountId, accounts, reset, daysInMonth, lastTransactionDay])
 
   // Clear balance category when account changes (if the category doesn't belong to new account)
   useEffect(() => {
