@@ -118,3 +118,20 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 - Free-tier Supabase projects pause after 7 days of inactivity - the cron job prevents this
 - GitHub repo: `muntaseer96/TrackMyRevenue`
 - GitHub Actions secrets configured: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+
+## Session Notes - 2026-02-14
+
+### What was done:
+- Investigated why Supabase paused again despite the keep-alive cron job from Jan 26
+- Root cause: GitHub silently skips scheduled workflows on repositories with no recent commit activity
+  - The cron job from Jan 26 only ran once (manually triggered) and never ran on schedule
+- Fixed the workflow (`.github/workflows/keep-supabase-alive.yml`) with two changes:
+  1. Added `permissions: contents: write` to allow the workflow to push commits
+  2. Added steps to commit a timestamp file (`.github/last-supabase-ping.txt`) each run
+- The commit step keeps the repo "active" so GitHub continues running scheduled workflows
+- Tested workflow manually - now passes successfully
+
+### Important context:
+- GitHub Actions scheduled workflows require recent repo activity to run reliably
+- The workflow now self-maintains activity by committing a timestamp file each run
+- Workflow runs every 5 days (`0 0 */5 * *`) - check runs at: https://github.com/muntaseer96/TrackMyRevenue/actions/workflows/keep-supabase-alive.yml
