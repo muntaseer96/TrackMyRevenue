@@ -135,3 +135,16 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 - GitHub Actions scheduled workflows require recent repo activity to run reliably
 - The workflow now self-maintains activity by committing a timestamp file each run
 - Workflow runs every 5 days (`0 0 */5 * *`) - check runs at: https://github.com/muntaseer96/TrackMyRevenue/actions/workflows/keep-supabase-alive.yml
+
+## Session Notes - 2026-02-14 (2)
+
+### What was done:
+- Changed transaction form day picker default from today's date to the day of the last transaction added
+  - Added `lastTransactionDay` state in `src/pages/Cashflow.tsx` to track the day from the most recently created transaction
+  - Passed it as a prop to `TransactionForm` component
+  - Updated `src/components/cashflow/TransactionForm.tsx` to use `lastTransactionDay` as default when available, falling back to today's date on first use in a session
+  - Value is capped to the number of days in the selected month
+
+### Important context:
+- The `lastTransactionDay` state resets on page reload (session-scoped) — first form open still defaults to today's date
+- Editing a transaction does not update the last day; only new transaction creation does
