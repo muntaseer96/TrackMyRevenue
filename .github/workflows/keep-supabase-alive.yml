@@ -10,6 +10,9 @@ jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Ping Supabase to keep it active
         run: |
           echo "Pinging Supabase to prevent automatic pause..."
@@ -29,5 +32,14 @@ jobs:
             exit 1
           fi
 
-      - name: Log timestamp
-        run: echo "Keep-alive ping completed at $(date -u)"
+      - name: Update keep-alive timestamp
+        run: |
+          echo "Last keep-alive: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" > .github/last-supabase-ping.txt
+
+      - name: Commit and push to keep repo active
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/last-supabase-ping.txt
+          git diff --staged --quiet || git commit -m "chore: keep-alive ping $(date -u +%Y-%m-%d)"
+          git push
