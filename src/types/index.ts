@@ -50,30 +50,136 @@ export interface MonthlyEntry {
   updated_at: string | null
 }
 
-export interface Investment {
+// ============================================
+// Portfolio / Asset Types
+// ============================================
+
+export type AssetType = 'bd_stock' | 'intl_stock' | 'real_estate' | 'fixed_deposit' | 'gold' | 'crypto' | 'bond' | 'other'
+export type AssetTransactionType = 'buy' | 'sell' | 'dividend' | 'interest' | 'rental_income' | 'other_income'
+
+export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
+  bd_stock: 'BD Stock',
+  intl_stock: 'Intl Stock',
+  real_estate: 'Real Estate',
+  fixed_deposit: 'Fixed Deposit',
+  gold: 'Gold',
+  crypto: 'Crypto',
+  bond: 'Bond',
+  other: 'Other',
+}
+
+export const ASSET_TYPE_COLORS: Record<AssetType, string> = {
+  bd_stock: '#3b82f6',
+  intl_stock: '#ec4899',
+  real_estate: '#f59e0b',
+  fixed_deposit: '#10b981',
+  gold: '#eab308',
+  crypto: '#8b5cf6',
+  bond: '#06b6d4',
+  other: '#6b7280',
+}
+
+export const TRANSACTION_TYPE_LABELS: Record<AssetTransactionType, string> = {
+  buy: 'Buy',
+  sell: 'Sell',
+  dividend: 'Dividend',
+  interest: 'Interest',
+  rental_income: 'Rental Income',
+  other_income: 'Other Income',
+}
+
+export const INCOME_TRANSACTION_TYPES: AssetTransactionType[] = ['dividend', 'interest', 'rental_income', 'other_income']
+
+export interface Asset {
   id: string
   user_id: string
-  company_name: string
-  principal_amount: number
+  name: string
+  asset_type: AssetType
+  currency: 'BDT' | 'USD'
+  purchase_date: string | null
+  purchase_price: number
+  current_value: number
+  has_transactions: boolean
   notes: string | null
-  year: number
+  quantity: number | null
+  ticker: string | null
+  area_sqft: number | null
+  location: string | null
+  interest_rate: number | null
+  maturity_date: string | null
+  institution: string | null
   created_at: string | null
   updated_at: string | null
 }
 
-export interface Dividend {
+export interface AssetTransaction {
   id: string
   user_id: string
-  investment_id: string
+  asset_id: string
+  transaction_type: AssetTransactionType
   year: number
   month: number
+  day: number | null
   amount: number
+  quantity: number | null
+  price_per_unit: number | null
+  fees: number
+  notes: string | null
   created_at: string | null
 }
 
-// Extended type with investment name for display
-export interface DividendWithInvestment extends Dividend {
-  investment?: Investment
+export interface AssetValuation {
+  id: string
+  user_id: string
+  asset_id: string
+  year: number
+  month: number
+  value: number
+  created_at: string | null
+}
+
+export interface AssetWithStats extends Asset {
+  totalIncome: number
+  gainLoss: number
+  gainLossPercent: number
+}
+
+export interface AssetFormData {
+  name: string
+  asset_type: AssetType
+  currency: 'BDT' | 'USD'
+  purchase_date?: string | null
+  purchase_price: number
+  current_value: number
+  has_transactions: boolean
+  notes?: string | null
+  quantity?: number | null
+  ticker?: string | null
+  area_sqft?: number | null
+  location?: string | null
+  interest_rate?: number | null
+  maturity_date?: string | null
+  institution?: string | null
+}
+
+export interface AssetTransactionFormData {
+  asset_id: string
+  transaction_type: AssetTransactionType
+  year: number
+  month: number
+  day?: number | null
+  amount: number
+  quantity?: number | null
+  price_per_unit?: number | null
+  fees?: number
+  notes?: string | null
+}
+
+export interface AssetValuationFormData {
+  asset_id: string
+  year: number
+  month: number
+  value: number
 }
 
 export interface Tool {
@@ -127,13 +233,6 @@ export interface CategoryFormData {
 export interface MonthlyEntryFormData {
   category_id: string
   amount: number
-}
-
-export interface InvestmentFormData {
-  company_name: string
-  year: number
-  month: number
-  dividend_amount: number
 }
 
 export interface ToolFormData {

@@ -93,76 +93,165 @@ export type Database = {
           },
         ]
       }
-      dividends: {
+      assets: {
         Row: {
-          amount: number
-          created_at: string | null
           id: string
-          investment_id: string
-          month: number
           user_id: string
-          year: number
+          name: string
+          asset_type: string
+          currency: string
+          purchase_date: string | null
+          purchase_price: number
+          current_value: number
+          has_transactions: boolean
+          notes: string | null
+          quantity: number | null
+          ticker: string | null
+          area_sqft: number | null
+          location: string | null
+          interest_rate: number | null
+          maturity_date: string | null
+          institution: string | null
+          created_at: string | null
+          updated_at: string | null
         }
         Insert: {
-          amount: number
-          created_at?: string | null
           id?: string
-          investment_id: string
-          month: number
           user_id: string
-          year: number
+          name: string
+          asset_type: string
+          currency?: string
+          purchase_date?: string | null
+          purchase_price?: number
+          current_value?: number
+          has_transactions?: boolean
+          notes?: string | null
+          quantity?: number | null
+          ticker?: string | null
+          area_sqft?: number | null
+          location?: string | null
+          interest_rate?: number | null
+          maturity_date?: string | null
+          institution?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
-          amount?: number
-          created_at?: string | null
           id?: string
-          investment_id?: string
-          month?: number
           user_id?: string
+          name?: string
+          asset_type?: string
+          currency?: string
+          purchase_date?: string | null
+          purchase_price?: number
+          current_value?: number
+          has_transactions?: boolean
+          notes?: string | null
+          quantity?: number | null
+          ticker?: string | null
+          area_sqft?: number | null
+          location?: string | null
+          interest_rate?: number | null
+          maturity_date?: string | null
+          institution?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      asset_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          asset_id: string
+          transaction_type: string
+          year: number
+          month: number
+          day: number | null
+          amount: number
+          quantity: number | null
+          price_per_unit: number | null
+          fees: number
+          notes: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          asset_id: string
+          transaction_type: string
+          year: number
+          month: number
+          day?: number | null
+          amount: number
+          quantity?: number | null
+          price_per_unit?: number | null
+          fees?: number
+          notes?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          asset_id?: string
+          transaction_type?: string
           year?: number
+          month?: number
+          day?: number | null
+          amount?: number
+          quantity?: number | null
+          price_per_unit?: number | null
+          fees?: number
+          notes?: string | null
+          created_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "dividends_investment_id_fkey"
-            columns: ["investment_id"]
+            foreignKeyName: "asset_transactions_asset_id_fkey"
+            columns: ["asset_id"]
             isOneToOne: false
-            referencedRelation: "investments"
+            referencedRelation: "assets"
             referencedColumns: ["id"]
           },
         ]
       }
-      investments: {
+      asset_valuations: {
         Row: {
-          company_name: string
-          created_at: string | null
           id: string
-          notes: string | null
-          principal_amount: number
-          updated_at: string | null
           user_id: string
+          asset_id: string
           year: number
+          month: number
+          value: number
+          created_at: string | null
         }
         Insert: {
-          company_name: string
-          created_at?: string | null
           id?: string
-          notes?: string | null
-          principal_amount?: number
-          updated_at?: string | null
           user_id: string
+          asset_id: string
           year: number
+          month: number
+          value: number
+          created_at?: string | null
         }
         Update: {
-          company_name?: string
-          created_at?: string | null
           id?: string
-          notes?: string | null
-          principal_amount?: number
-          updated_at?: string | null
           user_id?: string
+          asset_id?: string
           year?: number
+          month?: number
+          value?: number
+          created_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "asset_valuations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_entries: {
         Row: {

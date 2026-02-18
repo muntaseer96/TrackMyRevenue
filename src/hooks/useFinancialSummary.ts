@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
 import { useDashboardStats } from './useDashboardStats'
-import { useInvestmentStats } from './useInvestments'
+import { usePortfolioStats } from './usePortfolioStats'
 import { useFilterStore } from '../stores/filterStore'
 import type { FinancialSummary } from '../types/ai'
 
 export function useFinancialSummary() {
   const { year, startMonth, endMonth } = useFilterStore()
   const dashboardStats = useDashboardStats()
-  const investmentStats = useInvestmentStats()
+  const portfolioStats = usePortfolioStats()
 
-  const isLoading = dashboardStats.isLoading || investmentStats.isLoading
+  const isLoading = dashboardStats.isLoading || portfolioStats.isLoading
   const error = dashboardStats.error || null
 
   const summary = useMemo((): FinancialSummary | null => {
@@ -71,9 +71,9 @@ export function useFinancialSummary() {
         expense: expenseCategories,
       },
       investments: {
-        principal: investmentStats.totalPortfolio,
-        dividends: investmentStats.totalDividends,
-        yield: investmentStats.dividendYield,
+        principal: portfolioStats.totalCostBasis,
+        dividends: portfolioStats.totalIncome,
+        yield: portfolioStats.incomeYield,
       },
       recurringExpenses: {
         monthlyTotal,
@@ -87,9 +87,9 @@ export function useFinancialSummary() {
     dashboardStats.websiteRevenue,
     dashboardStats.revenueByCategory,
     dashboardStats.expenseByCategory,
-    investmentStats.totalPortfolio,
-    investmentStats.totalDividends,
-    investmentStats.dividendYield,
+    portfolioStats.totalCostBasis,
+    portfolioStats.totalIncome,
+    portfolioStats.incomeYield,
     year,
     startMonth,
     endMonth,

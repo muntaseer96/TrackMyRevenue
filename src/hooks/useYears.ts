@@ -140,31 +140,9 @@ export function useCreateYear() {
         }
       }
 
-      // 6. Get all investments from previous year
-      const { data: previousInvestments, error: investmentsError } = await supabase
-        .from('investments')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('year', previousYear)
+      // 6. Assets persist across years (no copy needed)
 
-      if (investmentsError) throw investmentsError
-
-      // 7. Copy investments to new year (without dividends - those are per-year)
-      if (previousInvestments && previousInvestments.length > 0) {
-        for (const investment of previousInvestments) {
-          const { error: insertError } = await supabase.from('investments').insert({
-            user_id: user.id,
-            company_name: investment.company_name,
-            principal_amount: investment.principal_amount,
-            notes: investment.notes,
-            year: newYear,
-          })
-
-          if (insertError) throw insertError
-        }
-      }
-
-      // 8. Get all yearly expenses (tools) from previous year
+      // 7. Get all yearly expenses (tools) from previous year
       const { data: previousYearlyExpenses, error: yearlyExpensesError } = await supabase
         .from('tools')
         .select('*')
@@ -214,7 +192,6 @@ export function useCreateYear() {
         newYear,
         copiedWebsites: previousWebsites?.length ?? 0,
         copiedCategories: previousCategories?.length ?? 0,
-        copiedInvestments: previousInvestments?.length ?? 0,
         copiedYearlyExpenses: previousYearlyExpenses?.length ?? 0,
       }
     },

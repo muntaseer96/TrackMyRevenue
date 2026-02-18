@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useFilterStore } from '../stores/filterStore'
-import type { Website, Category, MonthlyEntry, MonthlyExchangeRate, Tool, Dividend } from '../types'
+import type { Website, Category, MonthlyEntry, MonthlyExchangeRate, Tool, AssetTransaction } from '../types'
 
 // Query keys
 export const dashboardKeys = {
@@ -17,7 +17,7 @@ export interface DashboardData {
   entries: MonthlyEntry[]
   exchangeRates: MonthlyExchangeRate[]
   expenses: Tool[]
-  dividends: Dividend[]
+  assetTransactions: (AssetTransaction & { asset: { currency: string } })[]
 }
 
 export interface MonthlyTrendData {
@@ -54,7 +54,7 @@ export function useDashboardData() {
       if (!user?.id) throw new Error('User not authenticated')
 
       // Fetch all data in parallel
-      const [websitesResult, categoriesResult, entriesResult, ratesResult, expensesResult, dividendsResult] = await Promise.all([
+      const [websitesResult, categoriesResult, entriesResult, ratesResult, expensesResult, assetTxnResult] = await Promise.all([
         supabase
           .from('websites')
           .select('*')
@@ -85,12 +85,13 @@ export function useDashboardData() {
           .eq('user_id', user.id)
           .eq('year', year),
         supabase
-          .from('dividends')
-          .select('*')
+          .from('asset_transactions')
+          .select('*, asset:assets(currency)')
           .eq('user_id', user.id)
           .eq('year', year)
           .gte('month', startMonth)
-          .lte('month', endMonth),
+          .lte('month', endMonth)
+          .in('transaction_type', ['dividend', 'interest', 'rental_income', 'other_income']),
       ])
 
       if (websitesResult.error) throw websitesResult.error
@@ -98,7 +99,7 @@ export function useDashboardData() {
       if (entriesResult.error) throw entriesResult.error
       if (ratesResult.error) throw ratesResult.error
       if (expensesResult.error) throw expensesResult.error
-      if (dividendsResult.error) throw dividendsResult.error
+      if (assetTxnResult.error) throw assetTxnResult.error
 
       return {
         websites: websitesResult.data as Website[],
@@ -106,7 +107,7 @@ export function useDashboardData() {
         entries: entriesResult.data as MonthlyEntry[],
         exchangeRates: ratesResult.data as MonthlyExchangeRate[],
         expenses: expensesResult.data as Tool[],
-        dividends: dividendsResult.data as Dividend[],
+        assetTransactions: assetTxnResult.data as (AssetTransaction & { asset: { currency: string } })[],
       }
     },
     enabled: !!user?.id,
@@ -138,7 +139,7 @@ export function useDashboardStats() {
     }
   }
 
-  const { websites, categories, entries, expenses, dividends, exchangeRates } = data
+  const { websites, categories, entries, expenses, assetTransactions, exchangeRates } = data
 
   // Create lookup maps
   const categoryMap = new Map(categories.map(c => [c.id, c]))
@@ -178,12 +179,15 @@ export function useDashboardStats() {
     }
   })
 
-  // Add dividends to total revenue (convert BDT to USD using exchange rate)
-  const totalDividendsUSD = dividends.reduce((sum, div) => {
-    const rate = exchangeRateMap.get(div.month) || DEFAULT_EXCHANGE_RATE
-    return sum + (div.amount / rate)
+  // Add asset income (dividends, interest, rental, etc.) to total revenue
+  // Each transaction has the asset's currency via join
+  const totalAssetIncomeUSD = assetTransactions.reduce((sum, txn) => {
+    const currency = txn.asset?.currency || 'BDT'
+    if (currency === 'USD') return sum + txn.amount
+    const rate = exchangeRateMap.get(txn.month) || DEFAULT_EXCHANGE_RATE
+    return sum + (txn.amount / rate)
   }, 0)
-  totalRevenue += totalDividendsUSD
+  totalRevenue += totalAssetIncomeUSD
 
   // Calculate expense totals for the filtered range
   const totalGlobalMonthlyExpense = globalMonthlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
@@ -225,11 +229,16 @@ export function useDashboardStats() {
         }
       })
 
-      // Add dividends for this month (convert BDT to USD)
-      dividends.forEach(div => {
-        if (div.month === month) {
-          const rate = exchangeRateMap.get(month) || DEFAULT_EXCHANGE_RATE
-          revenue += div.amount / rate
+      // Add asset income for this month
+      assetTransactions.forEach(txn => {
+        if (txn.month === month) {
+          const currency = txn.asset?.currency || 'BDT'
+          if (currency === 'USD') {
+            revenue += txn.amount
+          } else {
+            const rate = exchangeRateMap.get(month) || DEFAULT_EXCHANGE_RATE
+            revenue += txn.amount / rate
+          }
         }
       })
 
