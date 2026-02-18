@@ -89,6 +89,7 @@ export interface Tool {
   due_month: number | null
   website_id: string | null
   is_template: boolean
+  is_allocated: boolean
   created_at: string | null
 }
 
@@ -145,6 +146,7 @@ export interface ToolFormData {
   due_month?: number | null
   website_id?: string | null
   is_template?: boolean
+  is_allocated?: boolean
 }
 
 // Dashboard types

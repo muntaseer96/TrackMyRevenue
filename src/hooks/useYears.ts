@@ -192,6 +192,7 @@ export function useCreateYear() {
             due_month: expense.due_month,
             website_id: newWebsiteId,
             is_template: expense.is_template,
+            is_allocated: expense.is_allocated ?? true,
           })
 
           if (insertError) throw insertError

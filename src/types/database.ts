@@ -289,6 +289,7 @@ export type Database = {
           due_month: number | null
           exchange_rate: number
           id: string
+          is_allocated: boolean | null
           is_template: boolean | null
           month: number
           name: string
@@ -304,6 +305,7 @@ export type Database = {
           due_month?: number | null
           exchange_rate?: number
           id?: string
+          is_allocated?: boolean | null
           is_template?: boolean | null
           month: number
           name: string
@@ -319,6 +321,7 @@ export type Database = {
           due_month?: number | null
           exchange_rate?: number
           id?: string
+          is_allocated?: boolean | null
           is_template?: boolean | null
           month?: number
           name?: string

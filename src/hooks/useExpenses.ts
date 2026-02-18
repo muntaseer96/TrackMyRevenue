@@ -193,6 +193,7 @@ export function useCreateExpense() {
       dueMonth = null,
       websiteId = null,
       isTemplate = false,
+      isAllocated = true,
     }: {
       name: string
       month: number
@@ -202,6 +203,7 @@ export function useCreateExpense() {
       dueMonth?: number | null
       websiteId?: string | null
       isTemplate?: boolean
+      isAllocated?: boolean
     }) => {
       if (!user?.id) throw new Error('User not authenticated')
 
@@ -218,6 +220,7 @@ export function useCreateExpense() {
           due_month: recurrence === 'yearly' ? dueMonth : null,
           website_id: websiteId,
           is_template: isTemplate,
+          is_allocated: isAllocated,
         })
         .select()
         .single()
@@ -246,6 +249,7 @@ export function useUpdateExpense() {
       dueMonth,
       websiteId,
       isTemplate,
+      isAllocated,
     }: {
       id: string
       name: string
@@ -255,6 +259,7 @@ export function useUpdateExpense() {
       dueMonth?: number | null
       websiteId?: string | null
       isTemplate?: boolean
+      isAllocated?: boolean
     }) => {
       const updateData: Record<string, unknown> = {
         name,
@@ -268,6 +273,7 @@ export function useUpdateExpense() {
       }
       if (websiteId !== undefined) updateData.website_id = websiteId
       if (isTemplate !== undefined) updateData.is_template = isTemplate
+      if (isAllocated !== undefined) updateData.is_allocated = isAllocated
 
       const { data, error } = await supabase
         .from('tools')
@@ -354,6 +360,7 @@ export function useAutoPopulateExpenses() {
         due_month: null,
         website_id: null,
         is_template: false,
+        is_allocated: expense.is_allocated ?? true,
       }))
 
       const { data, error } = await supabase
@@ -383,12 +390,14 @@ export function useCreateYearlyExpense() {
       dueMonth,
       exchangeRate,
       websiteId = null,
+      isAllocated = true,
     }: {
       name: string
       costUsd: number
       dueMonth: number
       exchangeRate: number
       websiteId?: string | null
+      isAllocated?: boolean
     }) => {
       if (!user?.id) throw new Error('User not authenticated')
 
@@ -405,6 +414,7 @@ export function useCreateYearlyExpense() {
           due_month: dueMonth,
           website_id: websiteId,
           is_template: false,
+          is_allocated: isAllocated,
         })
         .select()
         .single()

@@ -1,4 +1,4 @@
-import { Edit2, Trash2 } from 'lucide-react'
+import { Edit2, Trash2, Share2 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { useCurrencyStore } from '../../stores/currencyStore'
 import { formatBDT, formatUSD } from '../../utils/formatCurrency'
@@ -56,7 +56,14 @@ export function ExpensesList({
           key={expense.id}
           className="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
         >
-          <span className="font-medium text-gray-800">{expense.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-800">{expense.name}</span>
+            {expense.is_allocated !== false && !expense.website_id && (
+              <span title="Allocated to websites" className="text-primary">
+                <Share2 className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-gray-700 font-medium">
               {formatAmount(expense.cost_usd)}

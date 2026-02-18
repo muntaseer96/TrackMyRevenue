@@ -128,7 +128,10 @@ export function useWebsiteStats(websiteId: string | undefined) {
     }
   }
 
-  const { categories, entries, exchangeRates, expenses, globalExpenses, allEntries } = data
+  const { categories, entries, exchangeRates, expenses, globalExpenses: allGlobalExpenses, allEntries } = data
+
+  // Only include global expenses marked for allocation
+  const globalExpenses = allGlobalExpenses.filter(exp => exp.is_allocated !== false)
 
   // Create category lookup
   const categoryMap = new Map(categories.map(c => [c.id, c]))

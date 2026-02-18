@@ -31,6 +31,7 @@ interface ExpenseFormData {
   cost_usd: number
   recurrence: 'monthly' | 'yearly'
   due_month: number | null
+  is_allocated: boolean
 }
 
 interface ExpenseFormProps {
@@ -63,6 +64,7 @@ export function ExpenseForm({
       cost_usd: 0,
       recurrence: mode === 'yearly' ? 'yearly' : 'monthly',
       due_month: null,
+      is_allocated: true,
     },
   })
 
@@ -79,6 +81,7 @@ export function ExpenseForm({
         cost_usd: expense?.cost_usd || 0,
         recurrence: defaultRecurrence,
         due_month: expense?.due_month || null,
+        is_allocated: expense?.is_allocated ?? true,
       })
     }
   }, [open, expense, reset, mode])
@@ -206,6 +209,24 @@ export function ExpenseForm({
               {errors.due_month && (
                 <p className="text-sm text-red-500 mt-1">{errors.due_month.message}</p>
               )}
+            </div>
+          )}
+
+          {/* Allocation toggle - only for global expenses (no website_id) */}
+          {!expense?.website_id && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_allocated"
+                {...register('is_allocated')}
+                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="is_allocated" className="text-sm text-gray-700">
+                Allocate to websites
+              </label>
+              <span className="text-xs text-gray-400" title="When enabled, this expense is split equally across revenue-generating websites">
+                (?)
+              </span>
             </div>
           )}
 

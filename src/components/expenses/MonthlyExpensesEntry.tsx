@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Calendar, Plus, Copy, CalendarClock } from 'lucide-react'
+import { Calendar, Plus, Copy, CalendarClock, Share2 } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -170,7 +170,7 @@ export function MonthlyExpensesEntry() {
     setIsDeleteOpen(true)
   }
 
-  const handleFormSubmit = async (data: { name: string; cost_usd: number; recurrence: 'monthly' | 'yearly'; due_month: number | null }) => {
+  const handleFormSubmit = async (data: { name: string; cost_usd: number; recurrence: 'monthly' | 'yearly'; due_month: number | null; is_allocated: boolean }) => {
     try {
       if (selectedExpense) {
         await updateMutation.mutateAsync({
@@ -180,6 +180,7 @@ export function MonthlyExpensesEntry() {
           exchangeRate,
           recurrence: data.recurrence,
           dueMonth: data.due_month,
+          isAllocated: data.is_allocated,
         })
       } else {
         if (data.recurrence === 'yearly') {
@@ -188,6 +189,7 @@ export function MonthlyExpensesEntry() {
             costUsd: data.cost_usd,
             dueMonth: data.due_month || 1,
             exchangeRate,
+            isAllocated: data.is_allocated,
           })
         } else {
           await createMutation.mutateAsync({
@@ -196,6 +198,7 @@ export function MonthlyExpensesEntry() {
             costUsd: data.cost_usd,
             exchangeRate,
             recurrence: 'monthly',
+            isAllocated: data.is_allocated,
           })
         }
       }
@@ -356,6 +359,11 @@ export function MonthlyExpensesEntry() {
                       <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
                         Due: {MONTHS[expense.due_month! - 1]}
                       </span>
+                      {expense.is_allocated !== false && !expense.website_id && (
+                        <span title="Allocated to websites" className="text-primary">
+                          <Share2 className="w-3.5 h-3.5" />
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {formatUSD(expense.cost_usd)}/year

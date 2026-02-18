@@ -158,6 +158,10 @@ export function useDashboardStats() {
     exp.recurrence === 'yearly' && !exp.website_id
   )
 
+  // Only allocated global expenses are split across websites
+  const allocatedGlobalMonthlyExpenses = globalMonthlyExpenses.filter(exp => exp.is_allocated !== false)
+  const allocatedGlobalYearlyExpenses = globalYearlyExpenses.filter(exp => exp.is_allocated !== false)
+
   // Filter website-specific expenses (like domain renewals)
   const websiteExpenses = expenses.filter(exp => exp.website_id)
 
@@ -248,8 +252,10 @@ export function useDashboardStats() {
       }
     })
 
-  // Calculate total global expenses for allocation to websites
-  const totalGlobalExpenseForAllocation = totalGlobalMonthlyExpense + totalGlobalYearlyAmortized
+  // Calculate total global expenses for allocation to websites (only allocated ones)
+  const totalAllocatedMonthlyExpense = allocatedGlobalMonthlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
+  const totalAllocatedYearlyAmortized = allocatedGlobalYearlyExpenses.reduce((sum, exp) => sum + (exp.cost_usd / 12) * monthsInRange, 0)
+  const totalGlobalExpenseForAllocation = totalAllocatedMonthlyExpense + totalAllocatedYearlyAmortized
 
   // Count websites with revenue > 0 for fair allocation
   const websitesWithRevenue = websites.filter(website => {
