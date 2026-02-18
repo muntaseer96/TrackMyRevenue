@@ -164,7 +164,41 @@ export function useCreateYear() {
         }
       }
 
-      // 8. Update profile with new available year
+      // 8. Get all yearly expenses (tools) from previous year
+      const { data: previousYearlyExpenses, error: yearlyExpensesError } = await supabase
+        .from('tools')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('year', previousYear)
+        .eq('recurrence', 'yearly')
+
+      if (yearlyExpensesError) throw yearlyExpensesError
+
+      // 9. Copy yearly expenses to new year with updated website_id
+      if (previousYearlyExpenses && previousYearlyExpenses.length > 0) {
+        for (const expense of previousYearlyExpenses) {
+          const newWebsiteId = expense.website_id
+            ? websiteIdMap.get(expense.website_id) ?? null
+            : null
+
+          const { error: insertError } = await supabase.from('tools').insert({
+            user_id: user.id,
+            name: expense.name,
+            year: newYear,
+            month: expense.month,
+            cost_usd: expense.cost_usd,
+            exchange_rate: expense.exchange_rate,
+            recurrence: 'yearly',
+            due_month: expense.due_month,
+            website_id: newWebsiteId,
+            is_template: expense.is_template,
+          })
+
+          if (insertError) throw insertError
+        }
+      }
+
+      // 10. Update profile with new available year
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -180,6 +214,7 @@ export function useCreateYear() {
         copiedWebsites: previousWebsites?.length ?? 0,
         copiedCategories: previousCategories?.length ?? 0,
         copiedInvestments: previousInvestments?.length ?? 0,
+        copiedYearlyExpenses: previousYearlyExpenses?.length ?? 0,
       }
     },
     onSuccess: ({ newYear }) => {
@@ -192,6 +227,8 @@ export function useCreateYear() {
       queryClient.invalidateQueries({ queryKey: ['websites'] })
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       queryClient.invalidateQueries({ queryKey: ['investments'] })
+      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
     },
   })
 }
