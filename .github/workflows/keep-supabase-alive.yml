@@ -2,8 +2,8 @@ name: Keep Supabase Active
 
 on:
   schedule:
-    # Run every 5 days at 00:00 UTC to prevent Supabase from pausing (pauses after 7 days of inactivity)
-    - cron: '0 0 */5 * *'
+    # Run every 3 days at 00:00 UTC to prevent Supabase from pausing (pauses after 7 days of inactivity)
+    - cron: '0 0 */3 * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
@@ -16,22 +16,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Ping Supabase to keep it active
+      - name: Run SQL query to keep database active
         run: |
-          echo "Pinging Supabase to prevent automatic pause..."
+          echo "Running a real SQL query to prevent Supabase from pausing..."
 
-          # Ping the Supabase REST API health endpoint
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+          # Execute a SELECT query via PostgREST RPC to register as actual DB activity
+          response=$(curl -s -w "\n%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/keep_alive" \
+            -X POST \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
 
-          echo "Response status: $response"
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
 
-          if [ "$response" -eq 200 ] || [ "$response" -eq 401 ]; then
-            echo "Supabase is alive and responding!"
+          echo "Response status: $http_code"
+          echo "Response body: $body"
+
+          if [ "$http_code" -eq 200 ]; then
+            echo "Database query executed successfully — Supabase is active!"
           else
-            echo "Warning: Unexpected response from Supabase"
+            echo "Warning: Query failed with status $http_code"
             exit 1
           fi
 
