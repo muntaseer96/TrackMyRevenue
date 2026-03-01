@@ -41,6 +41,7 @@ const assetSchema = z.object({
   purchase_price: z.number({ message: 'Required' }).min(0),
   current_value: z.number({ message: 'Required' }).min(0),
   has_transactions: z.boolean(),
+  is_zakatable: z.boolean(),
   notes: z.string().max(500).optional().nullable(),
   quantity: z.number().optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
@@ -80,6 +81,7 @@ export function AssetForm({ open, onOpenChange, onSubmit, asset, isLoading }: As
       purchase_price: 0,
       current_value: 0,
       has_transactions: false,
+      is_zakatable: true,
     },
   })
 
@@ -96,6 +98,7 @@ export function AssetForm({ open, onOpenChange, onSubmit, asset, isLoading }: As
         purchase_price: asset?.purchase_price ?? 0,
         current_value: asset?.current_value ?? 0,
         has_transactions: asset?.has_transactions ?? false,
+        is_zakatable: asset?.is_zakatable !== false,
         notes: asset?.notes ?? '',
         quantity: asset?.quantity ?? null,
         ticker: asset?.ticker ?? '',
@@ -266,6 +269,16 @@ export function AssetForm({ open, onOpenChange, onSubmit, asset, isLoading }: As
                 {...register('has_transactions')}
               />
               <span className="text-sm text-gray-700">Enable transaction tracking (buy/sell/income)</span>
+            </label>
+
+            {/* Zakat toggle */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                {...register('is_zakatable')}
+              />
+              <span className="text-sm text-gray-700">Include in Zakat calculation</span>
             </label>
 
             {/* Notes */}

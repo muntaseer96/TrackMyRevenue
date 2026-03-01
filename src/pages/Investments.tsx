@@ -98,6 +98,11 @@ export function Investments() {
     }
   }
 
+  // Zakat toggle handler
+  const handleToggleZakat = (asset: Asset, value: boolean) => {
+    updateAsset.mutate({ id: asset.id, data: { is_zakatable: value } })
+  }
+
   // Valuation form handlers
   const handleUpdateValue = (asset: Asset) => {
     setSelectedAsset(asset)
@@ -155,6 +160,7 @@ export function Investments() {
               onDelete={handleDeleteClick}
               onAddTransaction={handleAddTransaction}
               onUpdateValue={handleUpdateValue}
+              onToggleZakat={handleToggleZakat}
               isLoading={stats.isLoading}
             />
           </TabsContent>

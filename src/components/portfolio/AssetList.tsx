@@ -13,6 +13,7 @@ interface AssetListProps {
   onDelete: (asset: Asset) => void
   onAddTransaction: (asset: Asset) => void
   onUpdateValue: (asset: Asset) => void
+  onToggleZakat?: (asset: Asset, value: boolean) => void
   isLoading?: boolean
 }
 
@@ -47,6 +48,7 @@ export function AssetList({
   onDelete,
   onAddTransaction,
   onUpdateValue,
+  onToggleZakat,
   isLoading,
 }: AssetListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -163,6 +165,26 @@ export function AssetList({
                         {isGain ? '+' : ''}{asset.gainLossPercent.toFixed(1)}%
                       </p>
                     </div>
+
+                    {/* Zakat Toggle */}
+                    {onToggleZakat && (
+                      <div
+                        className="flex-shrink-0 hidden sm:flex items-center gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                        title={asset.is_zakatable !== false ? 'Included in Zakat' : 'Excluded from Zakat'}
+                      >
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={asset.is_zakatable !== false}
+                            onChange={(e) => onToggleZakat(asset, e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-primary" style={{ height: '18px' }} />
+                        </label>
+                        <span className="text-[10px] text-gray-400 leading-tight w-8">Zakat</span>
+                      </div>
+                    )}
 
                     {/* Actions Menu */}
                     <div className="relative" onClick={(e) => e.stopPropagation()}>

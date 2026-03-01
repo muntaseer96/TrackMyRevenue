@@ -12,6 +12,7 @@ import {
   Upload,
   X,
   Wallet,
+  Calculator,
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { cn } from '../../lib/utils'
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/investments', icon: Briefcase, label: 'Portfolio' },
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/cashflow', icon: Wallet, label: 'Cashflow' },
+  { to: '/zakat', icon: Calculator, label: 'Zakat' },
   { to: '/import', icon: Upload, label: 'Import Data' },
   { to: '/profile', icon: User, label: 'Profile' },
 ]

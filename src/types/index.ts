@@ -100,6 +100,7 @@ export interface Asset {
   purchase_price: number
   current_value: number
   has_transactions: boolean
+  is_zakatable: boolean
   notes: string | null
   quantity: number | null
   ticker: string | null
@@ -152,6 +153,7 @@ export interface AssetFormData {
   purchase_price: number
   current_value: number
   has_transactions: boolean
+  is_zakatable?: boolean
   notes?: string | null
   quantity?: number | null
   ticker?: string | null
@@ -390,4 +392,43 @@ export interface BalanceCategoryFormData {
   name: string
   initial_balance: number
   color?: string
+}
+
+// ============================================
+// Zakat Types
+// ============================================
+
+export interface ZakatYear {
+  id: string
+  user_id: string
+  year: number
+  gold_price_per_gram: number
+  calculation_month: number
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface ZakatPayment {
+  id: string
+  user_id: string
+  zakat_year_id: string
+  amount: number
+  payment_date: string | null
+  note: string | null
+  created_at: string | null
+}
+
+export interface ZakatYearFormData {
+  year: number
+  gold_price_per_gram: number
+  calculation_month: number
+  notes?: string | null
+}
+
+export interface ZakatPaymentFormData {
+  zakat_year_id: string
+  amount: number
+  payment_date?: string | null
+  note?: string | null
 }

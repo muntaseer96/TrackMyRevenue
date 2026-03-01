@@ -12,6 +12,7 @@ import { Expenses } from './pages/Expenses'
 import { Profile } from './pages/Profile'
 import { Import } from './pages/Import'
 import { Cashflow } from './pages/Cashflow'
+import { Zakat } from './pages/Zakat'
 import { useEffect } from 'react'
 import { Toaster } from './components/ui'
 
@@ -53,6 +54,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/import" element={<Import />} />
             <Route path="/cashflow" element={<Cashflow />} />
+            <Route path="/zakat" element={<Zakat />} />
           </Route>
         </Route>
       </Routes>

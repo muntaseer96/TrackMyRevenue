@@ -75,6 +75,7 @@ export function useCreateAsset() {
           purchase_price: data.purchase_price,
           current_value: data.current_value,
           has_transactions: data.has_transactions,
+          is_zakatable: data.is_zakatable !== false,
           notes: data.notes || null,
           quantity: data.quantity ?? null,
           ticker: data.ticker || null,

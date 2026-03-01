@@ -104,6 +104,7 @@ export type Database = {
           purchase_price: number
           current_value: number
           has_transactions: boolean
+          is_zakatable: boolean | null
           notes: string | null
           quantity: number | null
           ticker: string | null
@@ -125,6 +126,7 @@ export type Database = {
           purchase_price?: number
           current_value?: number
           has_transactions?: boolean
+          is_zakatable?: boolean | null
           notes?: string | null
           quantity?: number | null
           ticker?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           purchase_price?: number
           current_value?: number
           has_transactions?: boolean
+          is_zakatable?: boolean | null
           notes?: string | null
           quantity?: number | null
           ticker?: string | null
@@ -552,6 +555,77 @@ export type Database = {
             referencedRelation: "personal_accounts"
             referencedColumns: ["id"]
           }
+        ]
+      }
+      zakat_years: {
+        Row: {
+          id: string
+          user_id: string
+          year: number
+          gold_price_per_gram: number
+          calculation_month: number
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          year: number
+          gold_price_per_gram: number
+          calculation_month?: number
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          year?: number
+          gold_price_per_gram?: number
+          calculation_month?: number
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      zakat_payments: {
+        Row: {
+          id: string
+          user_id: string
+          zakat_year_id: string
+          amount: number
+          payment_date: string | null
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          zakat_year_id: string
+          amount: number
+          payment_date?: string | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          zakat_year_id?: string
+          amount?: number
+          payment_date?: string | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zakat_payments_zakat_year_id_fkey"
+            columns: ["zakat_year_id"]
+            isOneToOne: false
+            referencedRelation: "zakat_years"
+            referencedColumns: ["id"]
+          },
         ]
       }
       personal_transactions: {
