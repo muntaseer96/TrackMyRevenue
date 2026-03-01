@@ -27,6 +27,9 @@ export const cashflowKeys = {
   transactions: () => [...cashflowKeys.all, 'transactions'] as const,
   transactionList: (userId: string, year: number, month: number, accountId?: string) =>
     [...cashflowKeys.transactions(), userId, year, month, accountId] as const,
+  carryForward: () => [...cashflowKeys.all, 'carryForward'] as const,
+  carryForwardKey: (userId: string, year: number, month: number) =>
+    [...cashflowKeys.carryForward(), userId, year, month] as const,
   balanceCategories: () => [...cashflowKeys.all, 'balanceCategories'] as const,
   balanceCategoryList: (userId: string, accountId?: string) =>
     [...cashflowKeys.balanceCategories(), userId, accountId] as const,
@@ -144,6 +147,7 @@ export function useDeletePersonalAccount() {
       queryClient.invalidateQueries({ queryKey: cashflowKeys.accounts() })
       queryClient.invalidateQueries({ queryKey: cashflowKeys.balances() })
       queryClient.invalidateQueries({ queryKey: cashflowKeys.transactions() })
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.carryForward() })
     },
   })
 }
@@ -372,6 +376,7 @@ export function useUpsertPersonalBalance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashflowKeys.balances() })
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.carryForward() })
     },
   })
 }
@@ -447,6 +452,7 @@ export function useCreatePersonalTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashflowKeys.transactions() })
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.carryForward() })
     },
   })
 }
@@ -482,6 +488,7 @@ export function useUpdatePersonalTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashflowKeys.transactions() })
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.carryForward() })
     },
   })
 }
@@ -501,6 +508,7 @@ export function useDeletePersonalTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cashflowKeys.transactions() })
+      queryClient.invalidateQueries({ queryKey: cashflowKeys.carryForward() })
     },
   })
 }
@@ -509,25 +517,106 @@ export function useDeletePersonalTransaction() {
 // COMPUTED / STATS
 // ============================================
 
-// Helper to get previous month/year
-function getPreviousMonth(year: number, month: number): { year: number; month: number } {
-  if (month === 1) {
-    return { year: year - 1, month: 12 }
-  }
-  return { year, month: month - 1 }
+// Hook that fetches all historical balances and transactions before a given month,
+// then walks through the chain to compute the correct carry-forward ending balance
+// for each account. This fixes the bug where carry-forward only worked one month deep.
+function useCarryForwardBalances(year: number, month: number) {
+  const { user } = useAuthStore()
+
+  return useQuery({
+    queryKey: cashflowKeys.carryForwardKey(user?.id ?? '', year, month),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      // Fetch ALL explicit beginning balances for this user
+      const { data: allBalances, error: balErr } = await supabase
+        .from('personal_balances')
+        .select('account_id, year, month, beginning_balance')
+        .eq('user_id', user.id)
+
+      if (balErr) throw balErr
+
+      // Fetch ALL transactions before the current month (only needed columns)
+      const { data: allTransactions, error: txErr } = await supabase
+        .from('personal_transactions')
+        .select('account_id, amount, year, month')
+        .eq('user_id', user.id)
+
+      if (txErr) throw txErr
+
+      // Filter to only months strictly before (year, month)
+      const isBefore = (y: number, m: number) =>
+        y < year || (y === year && m < month)
+
+      const priorBalances = (allBalances || []).filter(b => isBefore(b.year, b.month))
+      const priorTransactions = (allTransactions || []).filter(t => isBefore(t.year, t.month))
+
+      // Collect all unique (year, month) pairs that have data
+      const monthSet = new Set<string>()
+      priorBalances.forEach(b => monthSet.add(`${b.year}-${b.month}`))
+      priorTransactions.forEach(t => monthSet.add(`${t.year}-${t.month}`))
+
+      // Sort chronologically
+      const sortedMonths = Array.from(monthSet)
+        .map(s => {
+          const [y, m] = s.split('-').map(Number)
+          return { year: y, month: m }
+        })
+        .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month)
+
+      // Build lookup: "year-month" -> account_id -> explicit beginning_balance
+      const balanceLookup = new Map<string, Map<string, number>>()
+      priorBalances.forEach(b => {
+        const key = `${b.year}-${b.month}`
+        if (!balanceLookup.has(key)) balanceLookup.set(key, new Map())
+        balanceLookup.get(key)!.set(b.account_id, b.beginning_balance)
+      })
+
+      // Build lookup: "year-month" -> account_id -> sum of transaction amounts
+      const txSumLookup = new Map<string, Map<string, number>>()
+      priorTransactions.forEach(t => {
+        const key = `${t.year}-${t.month}`
+        if (!txSumLookup.has(key)) txSumLookup.set(key, new Map())
+        const current = txSumLookup.get(key)!.get(t.account_id) || 0
+        txSumLookup.get(key)!.set(t.account_id, current + t.amount)
+      })
+
+      // Walk through months chronologically, computing carry-forward
+      const carryForward = new Map<string, number>() // account_id -> ending balance
+
+      for (const { year: my, month: mm } of sortedMonths) {
+        const key = `${my}-${mm}`
+        const monthBalances = balanceLookup.get(key)
+        const monthTxSums = txSumLookup.get(key)
+
+        // Collect all account IDs involved in this month
+        const accountIds = new Set<string>()
+        monthBalances?.forEach((_, id) => accountIds.add(id))
+        monthTxSums?.forEach((_, id) => accountIds.add(id))
+
+        for (const accountId of accountIds) {
+          const explicit = monthBalances?.get(accountId)
+          // Use explicit balance if set, otherwise carry forward from previous month
+          const beginning = explicit !== undefined ? explicit : (carryForward.get(accountId) || 0)
+          const netChange = monthTxSums?.get(accountId) || 0
+          carryForward.set(accountId, beginning + netChange)
+        }
+      }
+
+      // Convert to plain object for React Query serialization
+      return Object.fromEntries(carryForward) as Record<string, number>
+    },
+    enabled: !!user?.id,
+  })
 }
 
 export function useCashflowStats(year: number, month: number) {
   const { data: accounts, isLoading: accountsLoading } = usePersonalAccounts()
   const { data: balances, isLoading: balancesLoading } = usePersonalBalances(year, month)
   const { data: transactions, isLoading: transactionsLoading } = usePersonalTransactions(year, month)
+  const { data: carryForwardBalances, isLoading: carryForwardLoading } = useCarryForwardBalances(year, month)
 
-  // Get previous month data for carry-forward calculation
-  const prev = getPreviousMonth(year, month)
-  const { data: prevBalances, isLoading: prevBalancesLoading } = usePersonalBalances(prev.year, prev.month)
-  const { data: prevTransactions, isLoading: prevTransactionsLoading } = usePersonalTransactions(prev.year, prev.month)
-
-  const isLoading = accountsLoading || balancesLoading || transactionsLoading || prevBalancesLoading || prevTransactionsLoading
+  const isLoading = accountsLoading || balancesLoading || transactionsLoading || carryForwardLoading
 
   if (!accounts || !balances || !transactions) {
     return {
@@ -540,21 +629,8 @@ export function useCashflowStats(year: number, month: number) {
     }
   }
 
-  // Create balance map for current month
+  // Create balance map for current month (explicit beginning balances)
   const balanceMap = new Map(balances.map(b => [b.account_id, b.beginning_balance]))
-
-  // Calculate previous month's ending balances for carry-forward
-  const prevBalanceMap = new Map((prevBalances || []).map(b => [b.account_id, b.beginning_balance]))
-  const prevEndingBalanceMap = new Map<string, number>()
-
-  if (prevTransactions) {
-    accounts.forEach(account => {
-      const prevAccountTransactions = prevTransactions.filter(t => t.account_id === account.id)
-      const prevNetChange = prevAccountTransactions.reduce((sum, t) => sum + t.amount, 0)
-      const prevBeginning = prevBalanceMap.get(account.id) || 0
-      prevEndingBalanceMap.set(account.id, prevBeginning + prevNetChange)
-    })
-  }
 
   // Calculate stats per account
   const accountStats = accounts.map(account => {
@@ -567,9 +643,9 @@ export function useCashflowStats(year: number, month: number) {
       .reduce((sum, t) => sum + Math.abs(t.amount), 0)
     const netChange = totalIncome - totalExpense
 
-    // Use explicit balance if set, otherwise use previous month's ending balance
+    // Use explicit balance if set, otherwise use carry-forward from full chain
     const explicitBalance = balanceMap.get(account.id)
-    const carryForwardBalance = prevEndingBalanceMap.get(account.id) || 0
+    const carryForwardBalance = carryForwardBalances?.[account.id] || 0
     const beginningBalance = explicitBalance !== undefined ? explicitBalance : carryForwardBalance
     const endingBalance = beginningBalance + netChange
 
