@@ -33,3 +33,6 @@ tsconfig.tsbuildinfo
 
 # Claude/MCP config (contains project-specific refs)
 .mcp.json
+
+# Markdown files
+*.md
