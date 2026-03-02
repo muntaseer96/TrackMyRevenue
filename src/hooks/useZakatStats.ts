@@ -58,6 +58,31 @@ export function useZakatStats(year: number, month: number): ZakatStats {
       })
     }
 
+    // External wallet balances (stored in USD, convert to BDT using zakat year's exchange rate)
+    const zakatExRate = zakatYear?.exchange_rate ?? 123
+    const payoneerUSD = zakatYear?.payoneer_balance ?? 0
+    const paypalUSD = zakatYear?.paypal_balance ?? 0
+    if (payoneerUSD > 0) {
+      const payoneerBDT = payoneerUSD * zakatExRate
+      cashWealth += payoneerBDT
+      wealthItems.push({
+        name: 'Payoneer',
+        value: payoneerBDT,
+        type: 'account',
+        zakatable: true,
+      })
+    }
+    if (paypalUSD > 0) {
+      const paypalBDT = paypalUSD * zakatExRate
+      cashWealth += paypalBDT
+      wealthItems.push({
+        name: 'PayPal',
+        value: paypalBDT,
+        type: 'account',
+        zakatable: true,
+      })
+    }
+
     // Portfolio wealth: sum of zakatable asset current values (USD→BDT conversion)
     let portfolioWealth = 0
     if (assets && assets.length > 0) {

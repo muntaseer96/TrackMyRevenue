@@ -81,6 +81,9 @@ export function useUpsertZakatYear() {
           .update({
             gold_price_per_gram: data.gold_price_per_gram,
             calculation_month: data.calculation_month,
+            payoneer_balance: data.payoneer_balance ?? 0,
+            paypal_balance: data.paypal_balance ?? 0,
+            exchange_rate: data.exchange_rate ?? 123,
             notes: data.notes || null,
             updated_at: new Date().toISOString(),
           })
@@ -98,6 +101,9 @@ export function useUpsertZakatYear() {
             year: data.year,
             gold_price_per_gram: data.gold_price_per_gram,
             calculation_month: data.calculation_month,
+            payoneer_balance: data.payoneer_balance ?? 0,
+            paypal_balance: data.paypal_balance ?? 0,
+            exchange_rate: data.exchange_rate ?? 123,
             notes: data.notes || null,
           })
           .select()

@@ -404,6 +404,9 @@ export interface ZakatYear {
   year: number
   gold_price_per_gram: number
   calculation_month: number
+  payoneer_balance: number
+  paypal_balance: number
+  exchange_rate: number
   notes: string | null
   created_at: string | null
   updated_at: string | null
@@ -423,6 +426,9 @@ export interface ZakatYearFormData {
   year: number
   gold_price_per_gram: number
   calculation_month: number
+  payoneer_balance?: number
+  paypal_balance?: number
+  exchange_rate?: number
   notes?: string | null
 }
 

@@ -46,9 +46,9 @@ export function Zakat() {
   const updatePayment = useUpdateZakatPayment()
   const deletePayment = useDeleteZakatPayment()
 
-  const handleSetupSubmit = (data: { gold_price_per_gram: number; calculation_month: number; notes?: string | null }) => {
+  const handleSetupSubmit = (data: { gold_price_per_gram: number; calculation_month: number; payoneer_balance: number; paypal_balance: number; exchange_rate: number; notes?: string | null }) => {
     upsertYear.mutate(
-      { year, gold_price_per_gram: data.gold_price_per_gram, calculation_month: data.calculation_month, notes: data.notes },
+      { year, ...data },
       {
         onSuccess: () => {
           setIsSetupOpen(false)
