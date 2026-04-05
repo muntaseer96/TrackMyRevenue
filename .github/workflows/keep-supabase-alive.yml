@@ -2,8 +2,8 @@ name: Keep Supabase Active
 
 on:
   schedule:
-    # Run every 3 days at 00:00 UTC to prevent Supabase from pausing (pauses after 7 days of inactivity)
-    - cron: '0 0 */3 * *'
+    # Run daily at 00:00 UTC to prevent Supabase from pausing (pauses after 7 days of inactivity)
+    - cron: '0 0 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
@@ -16,11 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run SQL query to keep database active
+      - name: Write to database to keep it active
         run: |
-          echo "Running a real SQL query to prevent Supabase from pausing..."
+          echo "Writing to database to prevent Supabase from pausing..."
 
-          # Execute a SELECT query via PostgREST RPC to register as actual DB activity
+          # Call keep_alive() which INSERTs a row and cleans up old ones
+          # This is a real write operation that Supabase counts as DB activity
           response=$(curl -s -w "\n%{http_code}" \
             "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/keep_alive" \
             -X POST \
@@ -36,9 +37,9 @@ jobs:
           echo "Response body: $body"
 
           if [ "$http_code" -eq 200 ]; then
-            echo "Database query executed successfully — Supabase is active!"
+            echo "Database write successful — Supabase is active!"
           else
-            echo "Warning: Query failed with status $http_code"
+            echo "Warning: Write failed with status $http_code"
             exit 1
           fi
 
