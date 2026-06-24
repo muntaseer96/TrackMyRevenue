@@ -20,6 +20,7 @@ import {
   SelectItem,
   SelectValue,
 } from '../ui/Select'
+import { TickerAutocomplete } from './TickerAutocomplete'
 import type { Asset, AssetType } from '../../types'
 
 const ASSET_TYPES: { value: AssetType; label: string }[] = [
@@ -87,6 +88,8 @@ export function AssetForm({ open, onOpenChange, onSubmit, asset, isLoading }: As
 
   const assetType = useWatch({ control, name: 'asset_type' })
   const purchasePrice = useWatch({ control, name: 'purchase_price' })
+  const tickerValue = useWatch({ control, name: 'ticker' })
+  const nameValue = useWatch({ control, name: 'name' })
 
   useEffect(() => {
     if (open) {
@@ -206,11 +209,24 @@ export function AssetForm({ open, onOpenChange, onSubmit, asset, isLoading }: As
             {/* Conditional: Stock/Crypto fields */}
             {showStockFields && (
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Ticker / Symbol"
-                  placeholder="e.g., GP, AAPL"
-                  {...register('ticker')}
-                />
+                {assetType === 'intl_stock' || assetType === 'crypto' ? (
+                  <TickerAutocomplete
+                    label="Ticker / Symbol"
+                    value={tickerValue ?? ''}
+                    onChange={(v) => setValue('ticker', v)}
+                    onSelect={(r) => {
+                      setValue('ticker', r.symbol)
+                      // Fill the name from the matched company if it's still blank.
+                      if (!nameValue?.trim()) setValue('name', r.name)
+                    }}
+                  />
+                ) : (
+                  <Input
+                    label="Ticker / Symbol"
+                    placeholder="e.g., GP"
+                    {...register('ticker')}
+                  />
+                )}
                 <Input
                   label="Quantity"
                   type="number"

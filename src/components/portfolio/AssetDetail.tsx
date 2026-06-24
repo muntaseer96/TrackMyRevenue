@@ -69,7 +69,7 @@ export function AssetDetail({ asset, onAddTransaction, onUpdateValue }: AssetDet
       </div>
 
       {/* Transactions section */}
-      {asset.has_transactions && (
+      {(asset.has_transactions || asset.asset_type === 'intl_stock') && (
         <div>
           <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
             <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -78,7 +78,7 @@ export function AssetDetail({ asset, onAddTransaction, onUpdateValue }: AssetDet
             </h4>
             <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); onAddTransaction() }}>
               <Plus className="w-4 h-4 mr-1" />
-              Add
+              {asset.asset_type === 'intl_stock' ? 'Update Shares' : 'Add'}
             </Button>
           </div>
 

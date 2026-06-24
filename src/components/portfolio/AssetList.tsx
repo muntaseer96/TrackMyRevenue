@@ -199,13 +199,13 @@ export function AssetList({
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
                           <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]">
-                            {asset.has_transactions && (
+                            {(asset.has_transactions || asset.asset_type === 'intl_stock') && (
                               <button
                                 onClick={() => { onAddTransaction(asset); setMenuOpenId(null) }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               >
                                 <Plus className="w-4 h-4" />
-                                Add Transaction
+                                {asset.asset_type === 'intl_stock' ? 'Update Shares' : 'Add Transaction'}
                               </button>
                             )}
                             <button

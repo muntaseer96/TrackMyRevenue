@@ -36,3 +36,6 @@ tsconfig.tsbuildinfo
 
 # Markdown files
 *.md
+
+# Supabase CLI local cache
+supabase/.temp/

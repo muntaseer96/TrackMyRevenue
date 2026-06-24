@@ -8,6 +8,7 @@ import {
   AssetList,
   AssetForm,
   TransactionForm,
+  IntlStockTransactionForm,
   ValuationForm,
   AssetAllocationChart,
 } from '../components/portfolio'
@@ -180,14 +181,24 @@ export function Investments() {
         isLoading={createAsset.isPending || updateAsset.isPending}
       />
 
-      {/* Transaction Form Modal */}
-      <TransactionForm
-        open={isTransactionFormOpen}
-        onOpenChange={setIsTransactionFormOpen}
-        onSubmit={handleTransactionSubmit}
-        asset={selectedAsset}
-        isLoading={createTransaction.isPending}
-      />
+      {/* Transaction Form Modal — intl stocks use the simplified auto-priced flow */}
+      {selectedAsset?.asset_type === 'intl_stock' ? (
+        <IntlStockTransactionForm
+          open={isTransactionFormOpen}
+          onOpenChange={setIsTransactionFormOpen}
+          onSubmit={handleTransactionSubmit}
+          asset={selectedAsset}
+          isLoading={createTransaction.isPending}
+        />
+      ) : (
+        <TransactionForm
+          open={isTransactionFormOpen}
+          onOpenChange={setIsTransactionFormOpen}
+          onSubmit={handleTransactionSubmit}
+          asset={selectedAsset}
+          isLoading={createTransaction.isPending}
+        />
+      )}
 
       {/* Valuation Form Modal */}
       <ValuationForm
