@@ -438,3 +438,61 @@ export interface ZakatPaymentFormData {
   payment_date?: string | null
   note?: string | null
 }
+
+// ============================================
+// Daily Expense Tracker Types
+// ============================================
+
+// Categories are stored in the `daily_expense_categories` table and are fully
+// user-manageable (the app and the Hermes agent can add/rename/delete them), so
+// the category on an expense is just a free-text name.
+export type DailyExpenseCategory = string
+
+// Fallback names used only if the category table is empty / still loading.
+// The live list comes from the DB via useDailyExpenseCategories().
+export const DEFAULT_EXPENSE_CATEGORY_NAMES = [
+  'Food', 'Groceries', 'Eating Out', 'Tea/Coffee', 'Cigarettes', 'Transport',
+  'Fuel', 'Travel', 'Rent', 'Bills/Utilities', 'Mobile/Internet', 'Family/Home',
+  'Repairs/Maintenance', 'Shopping', 'Clothing', 'Electronics', 'Health/Medical',
+  'Personal Care', 'Education', 'Entertainment', 'Kids', 'Gifts',
+  'Charity/Sadaqah', 'Tools/Software', 'Business', 'Other',
+] as const
+
+export type DailyExpenseCurrency = 'BDT' | 'USD'
+
+export interface DailyExpense {
+  id: string
+  user_id: string
+  expense_date: string
+  amount: number
+  currency: DailyExpenseCurrency
+  category: string
+  note: string | null
+  raw_input: string | null
+  created_at: string
+}
+
+export interface DailyExpenseFormData {
+  expense_date: string
+  amount: number
+  currency: DailyExpenseCurrency
+  category: string
+  note?: string | null
+  raw_input?: string | null
+}
+
+export interface DailyExpenseCategoryRow {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DailyExpenseCategoryFormData {
+  name: string
+  color?: string
+  sort_order?: number
+}

@@ -13,6 +13,7 @@ import {
   X,
   Wallet,
   Calculator,
+  Coffee,
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { cn } from '../../lib/utils'
@@ -23,7 +24,14 @@ const navItems = [
   { to: '/categories', icon: FolderTree, label: 'Categories' },
   { to: '/investments', icon: Briefcase, label: 'Portfolio' },
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
-  { to: '/cashflow', icon: Wallet, label: 'Cashflow' },
+  {
+    to: '/cashflow',
+    icon: Wallet,
+    label: 'Cashflow',
+    children: [
+      { to: '/daily-expenses', icon: Coffee, label: 'Personal Daily Expense' },
+    ],
+  },
   { to: '/zakat', icon: Calculator, label: 'Zakat' },
   { to: '/import', icon: Upload, label: 'Import Data' },
   { to: '/profile', icon: User, label: 'Profile' },
@@ -109,6 +117,29 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
                 </NavLink>
+
+                {'children' in item && item.children && (
+                  <ul className="mt-1 ml-5 pl-4 border-l border-gray-200 space-y-1">
+                    {item.children.map((child) => (
+                      <li key={child.to}>
+                        <NavLink
+                          to={child.to}
+                          className={({ isActive }) =>
+                            cn(
+                              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                              isActive
+                                ? 'bg-primary text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            )
+                          }
+                        >
+                          <child.icon className="w-4 h-4" />
+                          <span className="font-medium">{child.label}</span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>

@@ -695,6 +695,72 @@ export type Database = {
           }
         ]
       }
+      daily_expenses: {
+        Row: {
+          id: string
+          user_id: string
+          expense_date: string
+          amount: number
+          currency: string
+          category: string
+          note: string | null
+          raw_input: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          expense_date?: string
+          amount: number
+          currency?: string
+          category?: string
+          note?: string | null
+          raw_input?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          expense_date?: string
+          amount?: number
+          currency?: string
+          category?: string
+          note?: string | null
+          raw_input?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      daily_expense_categories: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          color: string
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          color?: string
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          color?: string
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
