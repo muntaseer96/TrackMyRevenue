@@ -94,6 +94,14 @@ export function Investments() {
         fees: data.fees || 0,
         notes: data.notes || null,
       })
+      // Keep the asset's current value in sync with the full holding at the
+      // latest market price (intl-stock "Update Shares" flow provides this).
+      if (typeof data.currentValue === 'number' && data.currentValue > 0) {
+        await updateAsset.mutateAsync({
+          id: selectedAsset.id,
+          data: { current_value: data.currentValue },
+        })
+      }
       setIsTransactionFormOpen(false)
       setSelectedAsset(null)
     }

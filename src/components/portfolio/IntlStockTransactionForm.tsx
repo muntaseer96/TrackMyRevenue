@@ -19,7 +19,7 @@ import type { Asset, AssetTransactionFormData } from '../../types'
 interface IntlStockTransactionFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: Omit<AssetTransactionFormData, 'asset_id'>) => void
+  onSubmit: (data: Omit<AssetTransactionFormData, 'asset_id'> & { currentValue?: number }) => void
   asset: Asset | null
   isLoading?: boolean
 }
@@ -51,6 +51,10 @@ export function IntlStockTransactionForm({
     error: priceError,
     refetch,
   } = useStockPrice(ticker, date, open && !!ticker)
+
+  // Latest (today's) price — used to keep the asset's current value in sync
+  // after a buy/sell, so the top-row total reflects the full holding.
+  const latest = useStockPrice(ticker, todayStr(), open && !!ticker)
 
   // Reset all state whenever the modal (re)opens.
   useEffect(() => {
@@ -85,6 +89,12 @@ export function IntlStockTransactionForm({
   const isSell = delta < 0
   const amountBDT = amount * DEFAULT_EXCHANGE_RATE
 
+  // New total holding value at the latest market price (falls back to the
+  // transaction price if today's price isn't available).
+  const latestClose = latest.data?.close ?? 0
+  const newTotalValue =
+    newTotal !== null && newTotal >= 0 ? newTotal * (latestClose || price) : 0
+
   const canSubmit =
     newTotal !== null &&
     newTotal >= 0 &&
@@ -112,6 +122,7 @@ export function IntlStockTransactionForm({
       price_per_unit: price,
       fees: 0,
       notes: note.trim() ? note.trim() : autoNote,
+      currentValue: newTotalValue > 0 ? Math.round(newTotalValue * 100) / 100 : undefined,
     })
   }
 
@@ -260,6 +271,12 @@ export function IntlStockTransactionForm({
                   <span>≈ in BDT (@ {DEFAULT_EXCHANGE_RATE})</span>
                   <span>{formatBDT(amountBDT)}</span>
                 </div>
+                {newTotalValue > 0 && (
+                  <div className="flex items-center justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
+                    <span>New holding value{latestClose ? ` (@ ${formatUSD(latestClose)}/sh)` : ''}</span>
+                    <span className="font-medium text-gray-700">{formatUSD(newTotalValue)}</span>
+                  </div>
+                )}
               </div>
             )}
 
