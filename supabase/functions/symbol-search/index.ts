@@ -41,10 +41,14 @@ serve(async (req) => {
       return json({ error: 'upstream', message: `Yahoo search returned ${res.status}` }, 502)
     }
     const data = await res.json()
-    const quotes: any[] = Array.isArray(data?.quotes) ? data.quotes : []
+    const quotes: Record<string, unknown>[] = Array.isArray(data?.quotes) ? data.quotes : []
 
     const results = quotes
-      .filter((qt) => qt.symbol && ['EQUITY', 'ETF', 'CRYPTOCURRENCY', 'INDEX', 'MUTUALFUND'].includes(qt.quoteType))
+      .filter(
+        (qt) =>
+          qt.symbol &&
+          ['EQUITY', 'ETF', 'CRYPTOCURRENCY', 'INDEX', 'MUTUALFUND'].includes(qt.quoteType as string),
+      )
       .map((qt) => ({
         symbol: qt.symbol as string,
         name: (qt.longname || qt.shortname || qt.symbol) as string,
