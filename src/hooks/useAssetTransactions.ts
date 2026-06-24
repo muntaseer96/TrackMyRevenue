@@ -88,17 +88,21 @@ export function useCreateAssetTransaction() {
 
       if (error) throw error
 
-      // Auto-update asset's purchase_price and quantity on buy/sell
+      // Auto-update asset's cost basis, quantity AND current value on buy/sell.
+      // Updating current_value here keeps the asset row's total in sync so a buy
+      // doesn't show a fake loss. For intl-stock "Update Shares", the caller
+      // overrides current_value afterwards with the latest market price.
       if (data.transaction_type === 'buy' || data.transaction_type === 'sell') {
         const { data: asset } = await supabase
           .from('assets')
-          .select('purchase_price, quantity')
+          .select('purchase_price, quantity, current_value')
           .eq('id', data.asset_id)
           .single()
 
         if (asset) {
           const currentCost = Number(asset.purchase_price) || 0
           const currentQty = Number(asset.quantity) || 0
+          const currentVal = Number(asset.current_value) || 0
           const txnQty = data.quantity || 0
 
           if (data.transaction_type === 'buy') {
@@ -106,18 +110,22 @@ export function useCreateAssetTransaction() {
               .from('assets')
               .update({
                 purchase_price: currentCost + data.amount,
+                current_value: currentVal + data.amount,
                 quantity: currentQty + txnQty,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', data.asset_id)
           } else {
-            // sell: reduce cost proportionally, reduce quantity
+            // sell: reduce cost and value proportionally (by quantity when
+            // available, otherwise by the sale amount), and reduce quantity.
             const costPerUnit = currentQty > 0 ? currentCost / currentQty : 0
-            const costReduction = costPerUnit * txnQty
+            const costReduction = currentQty > 0 ? costPerUnit * txnQty : data.amount
+            const valueReduction = currentQty > 0 ? (currentVal / currentQty) * txnQty : data.amount
             await supabase
               .from('assets')
               .update({
                 purchase_price: Math.max(0, currentCost - costReduction),
+                current_value: Math.max(0, currentVal - valueReduction),
                 quantity: Math.max(0, currentQty - txnQty),
                 updated_at: new Date().toISOString(),
               })
