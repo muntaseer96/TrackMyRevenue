@@ -1,0 +1,2 @@
+# SPA fallback: every path serves index.html and React Router takes over.
+/*  /index.html  200
