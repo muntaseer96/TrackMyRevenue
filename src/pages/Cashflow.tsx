@@ -61,9 +61,11 @@ export function Cashflow() {
   const { data: accounts = [], isLoading: accountsLoading } = usePersonalAccounts()
   const { data: categories = [] } = usePersonalCategories()
   const { data: balanceCategories = [] } = useBalanceCategories()
+  // When searching, look across all months instead of only the selected one
+  const isSearching = searchQuery.trim().length > 0
   const { data: transactions = [], isLoading: transactionsLoading } = usePersonalTransactions(
-    year,
-    month,
+    isSearching ? null : year,
+    isSearching ? null : month,
     activeTab !== 'all' && activeTab !== 'categories' ? activeTab : undefined
   )
   const {
@@ -301,6 +303,7 @@ export function Cashflow() {
                   onDelete={(t) => setDeleteConfirmTransaction(t)}
                   isLoading={transactionsLoading}
                   showAccountColumn={true}
+                  showYear={isSearching}
                 />
               </>
             )}
@@ -328,6 +331,7 @@ export function Cashflow() {
                 onDelete={(t) => setDeleteConfirmTransaction(t)}
                 isLoading={transactionsLoading}
                 showAccountColumn={false}
+                showYear={isSearching}
               />
             </TabsContent>
           ))}

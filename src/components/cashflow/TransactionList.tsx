@@ -19,6 +19,7 @@ interface TransactionListProps {
   onDelete: (transaction: PersonalTransactionWithCategory) => void
   isLoading?: boolean
   showAccountColumn?: boolean
+  showYear?: boolean
 }
 
 const MONTHS = [
@@ -33,10 +34,11 @@ function formatBDT(amount: number): string {
   return amount < 0 ? `-৳${formatted}` : `+৳${formatted}`
 }
 
-function formatDate(day: number, month: number, year: number): string {
+function formatDate(day: number, month: number, year: number, showYear = false): string {
   const date = new Date(year, month - 1, day)
   const dayName = DAYS[date.getDay()]
-  return `${day}-${MONTHS[month - 1]}, ${dayName}`
+  const yearPart = showYear ? ` ${year}` : ''
+  return `${day}-${MONTHS[month - 1]}${yearPart}, ${dayName}`
 }
 
 export function TransactionList({
@@ -46,6 +48,7 @@ export function TransactionList({
   onDelete,
   isLoading = false,
   showAccountColumn = true,
+  showYear = false,
 }: TransactionListProps) {
   // Create account map for quick lookup
   const accountMap = new Map(accounts.map(a => [a.id, a]))
@@ -118,7 +121,7 @@ export function TransactionList({
             return (
               <TableRow key={transaction.id} className="group">
                 <TableCell className="font-medium">
-                  {formatDate(transaction.day, transaction.month, transaction.year)}
+                  {formatDate(transaction.day, transaction.month, transaction.year, showYear)}
                 </TableCell>
                 {showAccountColumn && (
                   <TableCell>

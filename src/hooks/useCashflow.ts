@@ -385,11 +385,12 @@ export function useUpsertPersonalBalance() {
 // TRANSACTIONS
 // ============================================
 
-export function usePersonalTransactions(year: number, month: number, accountId?: string) {
+// Pass `null` for year/month to fetch transactions across ALL months (used by search)
+export function usePersonalTransactions(year: number | null, month: number | null, accountId?: string) {
   const { user } = useAuthStore()
 
   return useQuery({
-    queryKey: cashflowKeys.transactionList(user?.id ?? '', year, month, accountId),
+    queryKey: cashflowKeys.transactionList(user?.id ?? '', year ?? 0, month ?? 0, accountId),
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated')
 
@@ -397,8 +398,14 @@ export function usePersonalTransactions(year: number, month: number, accountId?:
         .from('personal_transactions')
         .select('*, category:personal_categories(*), balance_category:balance_categories(*)')
         .eq('user_id', user.id)
-        .eq('year', year)
-        .eq('month', month)
+
+      if (year !== null && month !== null) {
+        query = query.eq('year', year).eq('month', month)
+      }
+
+      query = query
+        .order('year', { ascending: false })
+        .order('month', { ascending: false })
         .order('day', { ascending: false })
         .order('created_at', { ascending: false })
 
