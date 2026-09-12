@@ -373,6 +373,45 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_allocation_targets: {
+        Row: {
+          created_at: string
+          id: string
+          tool_id: string
+          user_id: string
+          website_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tool_id: string
+          user_id: string
+          website_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tool_id?: string
+          user_id?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_allocation_targets_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_allocation_targets_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tools: {
         Row: {
           cost_bdt: number | null

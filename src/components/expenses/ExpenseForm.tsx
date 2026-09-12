@@ -9,6 +9,8 @@ import {
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select'
+import { useWebsites } from '../../hooks/useWebsites'
+import { useToolAllocationTargets } from '../../hooks/useToolAllocationTargets'
 import type { Tool } from '../../types'
 
 const MONTHS = [
@@ -32,6 +34,8 @@ interface ExpenseFormData {
   recurrence: 'monthly' | 'yearly'
   due_month: number | null
   is_allocated: boolean
+  /** Empty means "split across every revenue-earning site". */
+  allocation_website_ids: string[]
 }
 
 interface ExpenseFormProps {
@@ -65,10 +69,15 @@ export function ExpenseForm({
       recurrence: mode === 'yearly' ? 'yearly' : 'monthly',
       due_month: null,
       is_allocated: true,
+      allocation_website_ids: [],
     },
   })
 
   const recurrence = useWatch({ control, name: 'recurrence' })
+  const isAllocated = useWatch({ control, name: 'is_allocated' })
+  const allocationWebsiteIds = useWatch({ control, name: 'allocation_website_ids' }) ?? []
+  const { data: websites = [] } = useWebsites()
+  const { data: allocationTargets = [] } = useToolAllocationTargets()
   const costUsd = useWatch({ control, name: 'cost_usd' })
   const dueMonth = useWatch({ control, name: 'due_month' })
 
@@ -82,9 +91,12 @@ export function ExpenseForm({
         recurrence: defaultRecurrence,
         due_month: expense?.due_month || null,
         is_allocated: expense?.is_allocated ?? true,
+        allocation_website_ids: expense
+          ? allocationTargets.filter(t => t.tool_id === expense.id).map(t => t.website_id)
+          : [],
       })
     }
-  }, [open, expense, reset, mode])
+  }, [open, expense, reset, mode, allocationTargets])
 
   const handleFormSubmit = (data: ExpenseFormData) => {
     onSubmit(data)
@@ -227,6 +239,41 @@ export function ExpenseForm({
               <span className="text-xs text-gray-400" title="When enabled, this expense is split equally across revenue-generating websites">
                 (?)
               </span>
+            </div>
+          )}
+
+          {/* Which sites carry the cost. Nothing ticked = every earning site. */}
+          {!expense?.website_id && isAllocated && (
+            <div className="rounded-md border border-gray-200 p-3">
+              <p className="text-sm font-medium text-gray-700">Split across</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {allocationWebsiteIds.length === 0
+                  ? 'All revenue-earning websites'
+                  : `${allocationWebsiteIds.length} selected website${allocationWebsiteIds.length === 1 ? '' : 's'}`}
+                {' — tick only the sites this cost actually covers.'}
+              </p>
+              <div className="mt-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-x-4 gap-y-1">
+                {websites.map((website) => (
+                  <label key={website.id} className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      value={website.id}
+                      {...register('allocation_website_ids')}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    {website.name}
+                  </label>
+                ))}
+              </div>
+              {allocationWebsiteIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setValue('allocation_website_ids', [])}
+                  className="mt-2 text-xs text-link hover:underline"
+                >
+                  Clear — share across all sites
+                </button>
+              )}
             </div>
           )}
 

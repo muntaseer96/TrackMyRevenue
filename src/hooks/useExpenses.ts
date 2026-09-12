@@ -369,10 +369,49 @@ export function useAutoPopulateExpenses() {
         .select()
 
       if (error) throw error
-      return data as Tool[]
+
+      const created = data as Tool[]
+
+      // Carry the source month's allocation targets onto the new rows, or a
+      // cost limited to a few sites would silently go back to being split
+      // across all of them next month.
+      const { data: sourceTargets, error: targetError } = await supabase
+        .from('tool_allocation_targets')
+        .select('tool_id, website_id')
+        .in('tool_id', sourceExpenses.map(e => e.id))
+
+      if (targetError) throw targetError
+
+      if (sourceTargets && sourceTargets.length > 0) {
+        const sourceIdByName = new Map(sourceExpenses.map(e => [e.id, e.name]))
+        const websitesByName = new Map<string, string[]>()
+        sourceTargets.forEach(t => {
+          const name = sourceIdByName.get(t.tool_id)
+          if (!name) return
+          websitesByName.set(name, [...(websitesByName.get(name) ?? []), t.website_id])
+        })
+
+        const newTargets = created.flatMap(expense =>
+          (websitesByName.get(expense.name) ?? []).map(websiteId => ({
+            user_id: user.id,
+            tool_id: expense.id,
+            website_id: websiteId,
+          }))
+        )
+
+        if (newTargets.length > 0) {
+          const { error: insertError } = await supabase
+            .from('tool_allocation_targets')
+            .insert(newTargets)
+          if (insertError) throw insertError
+        }
+      }
+
+      return created
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['toolAllocationTargets'] })
     },
   })
 }

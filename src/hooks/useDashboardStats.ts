@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useFilterStore } from '../stores/filterStore'
-import type { Website, Category, MonthlyEntry, MonthlyExchangeRate, Tool, AssetTransaction } from '../types'
+import type { Website, Category, MonthlyEntry, MonthlyExchangeRate, Tool, AssetTransaction, ToolAllocationTarget } from '../types'
+import { buildGlobalAllocator } from '../utils/expenseAllocation'
 
 // Query keys
 export const dashboardKeys = {
@@ -18,6 +19,7 @@ export interface DashboardData {
   exchangeRates: MonthlyExchangeRate[]
   expenses: Tool[]
   assetTransactions: (AssetTransaction & { asset: { currency: string } })[]
+  allocationTargets: ToolAllocationTarget[]
 }
 
 export interface MonthlyTrendData {
@@ -54,7 +56,7 @@ export function useDashboardData() {
       if (!user?.id) throw new Error('User not authenticated')
 
       // Fetch all data in parallel
-      const [websitesResult, categoriesResult, entriesResult, ratesResult, expensesResult, assetTxnResult] = await Promise.all([
+      const [websitesResult, categoriesResult, entriesResult, ratesResult, expensesResult, assetTxnResult, allocationTargetsResult] = await Promise.all([
         supabase
           .from('websites')
           .select('*')
@@ -92,6 +94,10 @@ export function useDashboardData() {
           .gte('month', startMonth)
           .lte('month', endMonth)
           .in('transaction_type', ['dividend', 'interest', 'rental_income', 'other_income']),
+        supabase
+          .from('tool_allocation_targets')
+          .select('*')
+          .eq('user_id', user.id),
       ])
 
       if (websitesResult.error) throw websitesResult.error
@@ -100,6 +106,7 @@ export function useDashboardData() {
       if (ratesResult.error) throw ratesResult.error
       if (expensesResult.error) throw expensesResult.error
       if (assetTxnResult.error) throw assetTxnResult.error
+      if (allocationTargetsResult.error) throw allocationTargetsResult.error
 
       return {
         websites: websitesResult.data as Website[],
@@ -108,6 +115,7 @@ export function useDashboardData() {
         exchangeRates: ratesResult.data as MonthlyExchangeRate[],
         expenses: expensesResult.data as Tool[],
         assetTransactions: assetTxnResult.data as (AssetTransaction & { asset: { currency: string } })[],
+        allocationTargets: (allocationTargetsResult.data || []) as ToolAllocationTarget[],
       }
     },
     enabled: !!user?.id,
@@ -139,7 +147,7 @@ export function useDashboardStats() {
     }
   }
 
-  const { websites, categories, entries, expenses, assetTransactions, exchangeRates } = data
+  const { websites, categories, entries, expenses, assetTransactions, exchangeRates, allocationTargets } = data
 
   // Create lookup maps
   const categoryMap = new Map(categories.map(c => [c.id, c]))
@@ -158,10 +166,6 @@ export function useDashboardStats() {
   const globalYearlyExpenses = expenses.filter(exp =>
     exp.recurrence === 'yearly' && !exp.website_id
   )
-
-  // Only allocated global expenses are split across websites
-  const allocatedGlobalMonthlyExpenses = globalMonthlyExpenses.filter(exp => exp.is_allocated !== false)
-  const allocatedGlobalYearlyExpenses = globalYearlyExpenses.filter(exp => exp.is_allocated !== false)
 
   // Filter website-specific expenses (like domain renewals)
   const websiteExpenses = expenses.filter(exp => exp.website_id)
@@ -261,23 +265,11 @@ export function useDashboardStats() {
       }
     })
 
-  // Calculate total global expenses for allocation to websites (only allocated ones)
-  const totalAllocatedMonthlyExpense = allocatedGlobalMonthlyExpenses.reduce((sum, exp) => sum + exp.cost_usd, 0)
-  const totalAllocatedYearlyAmortized = allocatedGlobalYearlyExpenses.reduce((sum, exp) => sum + (exp.cost_usd / 12) * monthsInRange, 0)
-  const totalGlobalExpenseForAllocation = totalAllocatedMonthlyExpense + totalAllocatedYearlyAmortized
-
-  // Count websites with revenue > 0 for fair allocation
-  const websitesWithRevenue = websites.filter(website => {
-    return entries.some(entry => {
-      if (entry.website_id !== website.id) return false
-      const category = categoryMap.get(entry.category_id)
-      return category?.type === 'revenue' && entry.amount > 0
-    })
-  })
-  const websiteCountForAllocation = Math.max(websitesWithRevenue.length, 1) // Avoid division by 0
-
-  // Global expense per website (equal split among revenue-generating sites)
-  const globalExpensePerWebsite = totalGlobalExpenseForAllocation / websiteCountForAllocation
+  // Shared allocation rules live in one place so the Dashboard and the Website
+  // Detail page always agree — see utils/expenseAllocation.ts. This also honours
+  // tool_allocation_targets, so a cost like WPX hosting is split only across the
+  // sites it actually covers.
+  const allocator = buildGlobalAllocator(expenses, allocationTargets, entries, categories)
 
   // Revenue by website (filtered by month range)
   const websiteRevenue: WebsiteRevenueData[] = websites.map(website => {
@@ -302,10 +294,8 @@ export function useDashboardStats() {
       }
     })
 
-    // Add allocated global expenses (only for websites with revenue)
-    if (revenue > 0) {
-      expense += globalExpensePerWebsite
-    }
+    // Add this website's share of the pooled expenses
+    expense += allocator.forWebsiteRange(website.id, startMonth, endMonth)
 
     return {
       websiteId: website.id,

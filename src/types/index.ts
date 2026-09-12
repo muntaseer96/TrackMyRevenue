@@ -201,6 +201,16 @@ export interface Tool {
   created_at: string | null
 }
 
+// Limits a shared (global) expense to a subset of websites.
+// No rows for a tool means it is shared by every revenue-earning website.
+export interface ToolAllocationTarget {
+  id: string
+  user_id: string
+  tool_id: string
+  website_id: string
+  created_at: string | null
+}
+
 export interface MonthlyExchangeRate {
   id: string
   user_id: string

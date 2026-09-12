@@ -10,6 +10,7 @@ import {
 import { Button } from '../ui/Button'
 import { ExpensesList } from './ExpensesList'
 import { ExpenseForm } from './ExpenseForm'
+import { useSetToolAllocationTargets } from '../../hooks/useToolAllocationTargets'
 import { DeleteConfirmation } from '../websites/DeleteConfirmation'
 import {
   useMonthlyExpenses,
@@ -128,6 +129,7 @@ export function MonthlyExpensesEntry() {
   const createMutation = useCreateExpense()
   const createYearlyMutation = useCreateYearlyExpense()
   const updateMutation = useUpdateExpense()
+  const setAllocationTargetsMutation = useSetToolAllocationTargets()
   const deleteMutation = useDeleteExpense()
   const upsertRateMutation = useUpsertExchangeRate()
   const autoPopulateMutation = useAutoPopulateExpenses()
@@ -170,7 +172,7 @@ export function MonthlyExpensesEntry() {
     setIsDeleteOpen(true)
   }
 
-  const handleFormSubmit = async (data: { name: string; cost_usd: number; recurrence: 'monthly' | 'yearly'; due_month: number | null; is_allocated: boolean }) => {
+  const handleFormSubmit = async (data: { name: string; cost_usd: number; recurrence: 'monthly' | 'yearly'; due_month: number | null; is_allocated: boolean; allocation_website_ids: string[] }) => {
     try {
       if (selectedExpense) {
         await updateMutation.mutateAsync({
@@ -202,6 +204,15 @@ export function MonthlyExpensesEntry() {
           })
         }
       }
+      // Targets are keyed by expense name for the year, so this covers every
+      // month of the expense in one go — not just the row being edited.
+      if (!selectedExpense?.website_id) {
+        await setAllocationTargetsMutation.mutateAsync({
+          name: data.name,
+          websiteIds: data.is_allocated ? data.allocation_website_ids : [],
+        })
+      }
+
       setIsFormOpen(false)
       setIsYearlyFormOpen(false)
       setSelectedExpense(null)
