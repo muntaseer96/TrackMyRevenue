@@ -31,7 +31,7 @@ const MAX_VISIBLE_CATEGORIES = 8 // Maximum number of categories to show before 
 
 export function CategoryPieChart({
   revenueData,
-  exchangeRate = 122,
+  exchangeRate = 123,
   websites = [],
   entries = [],
   categories = []

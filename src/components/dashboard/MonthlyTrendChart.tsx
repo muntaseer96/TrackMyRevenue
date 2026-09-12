@@ -17,7 +17,7 @@ interface MonthlyTrendChartProps {
   exchangeRate?: number
 }
 
-export function MonthlyTrendChart({ data, exchangeRate = 122 }: MonthlyTrendChartProps) {
+export function MonthlyTrendChart({ data, exchangeRate = 123 }: MonthlyTrendChartProps) {
   const { currencyView } = useCurrencyStore()
 
   const formatAmount = (value: number) => {

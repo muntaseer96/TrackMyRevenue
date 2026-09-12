@@ -17,7 +17,7 @@ interface RevenueByWebsiteChartProps {
   exchangeRate?: number
 }
 
-export function RevenueByWebsiteChart({ data, exchangeRate = 122 }: RevenueByWebsiteChartProps) {
+export function RevenueByWebsiteChart({ data, exchangeRate = 123 }: RevenueByWebsiteChartProps) {
   const { currencyView } = useCurrencyStore()
 
   const formatAmount = (value: number) => {

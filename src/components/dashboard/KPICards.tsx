@@ -10,7 +10,7 @@ interface KPICardsProps {
   exchangeRate?: number
 }
 
-export function KPICards({ revenue, expense, profit, margin, exchangeRate = 122 }: KPICardsProps) {
+export function KPICards({ revenue, expense, profit, margin, exchangeRate = 123 }: KPICardsProps) {
   const { currencyView } = useCurrencyStore()
 
   const formatAmount = (amount: number) => {
