@@ -22,7 +22,7 @@ export const exchangeRateKeys = {
 }
 
 // Default exchange rate (BDT per USD)
-export const DEFAULT_EXCHANGE_RATE = 122
+export const DEFAULT_EXCHANGE_RATE = 123
 
 // Fetch exchange rate for a specific month
 export function useExchangeRate(month: number) {

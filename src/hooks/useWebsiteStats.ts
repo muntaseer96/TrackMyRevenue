@@ -142,7 +142,7 @@ export function useWebsiteStats(websiteId: string | undefined) {
       monthlyTrend: [] as WebsiteMonthlyTrendData[],
       revenueByCategory: [] as WebsiteCategoryData[],
       expenseByCategory: [] as WebsiteCategoryData[],
-      avgExchangeRate: 122,
+      avgExchangeRate: 123,
     }
   }
 
@@ -176,7 +176,7 @@ export function useWebsiteStats(websiteId: string | undefined) {
   // Calculate average exchange rate
   const avgExchangeRate = exchangeRates.length
     ? exchangeRates.reduce((sum, r) => sum + r.rate, 0) / exchangeRates.length
-    : 122
+    : 123
 
   // Calculate totals
   let totalRevenue = 0

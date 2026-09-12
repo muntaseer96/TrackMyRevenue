@@ -153,7 +153,7 @@ export function useDashboardStats() {
   const categoryMap = new Map(categories.map(c => [c.id, c]))
 
   // Create exchange rate map by month (for converting BDT dividends to USD)
-  const DEFAULT_EXCHANGE_RATE = 122 // Default if no rate set
+  const DEFAULT_EXCHANGE_RATE = 123 // Default if no rate set
   const exchangeRateMap = new Map(exchangeRates.map(r => [r.month, r.rate]))
 
   // Filter global expenses (not website-specific)
