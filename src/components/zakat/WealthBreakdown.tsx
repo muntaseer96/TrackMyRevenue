@@ -18,7 +18,7 @@ interface WealthBreakdownProps {
 }
 
 function formatBDT(amount: number): string {
-  const formatted = Math.abs(amount).toLocaleString('en-IN')
+  const formatted = Math.abs(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })
   return amount < 0 ? `-৳${formatted}` : `৳${formatted}`
 }
 

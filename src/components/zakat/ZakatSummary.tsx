@@ -11,7 +11,7 @@ interface ZakatSummaryProps {
 }
 
 function formatBDT(amount: number): string {
-  const formatted = Math.abs(amount).toLocaleString('en-IN')
+  const formatted = Math.abs(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })
   return `৳${formatted}`
 }
 
@@ -60,7 +60,13 @@ export function ZakatSummary({
         title="Remaining"
         value={formatBDT(remaining)}
         icon={<AlertCircle className="w-5 h-5 text-red-600" />}
-        subtitle={remaining === 0 && zakatDue > 0 ? 'Fully paid' : undefined}
+        subtitle={
+          remaining === 0 && zakatDue > 0
+            ? totalPaid - zakatDue >= 1
+              ? `Fully paid · ${formatBDT(totalPaid - zakatDue)} overpaid`
+              : 'Fully paid'
+            : undefined
+        }
       />
     </div>
   )
